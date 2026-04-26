@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Watchlist</title>
+    <style>
+        #watchlistTabPage { padding: 1.5em 2em; }
+        #watchlistTabPage h2 { margin: 0 0 1em; font-size: 1.4em; font-weight: 600; }
+        #wlEmpty { display: none; text-align: center; padding: 4em 1em; opacity: 0.55; font-size: 1em; }
+        #wlEmpty.visible { display: block; }
+        #wlLoading { text-align: center; padding: 4em 1em; opacity: 0.55; }
+        #wlGrid { display: flex; flex-wrap: wrap; gap: 1em; }
+    </style>
+</head>
+<body>
+<div id="watchlistTabPage" data-role="page">
+    <div data-role="content">
+        <div class="content-primary">
+            <div class="sectionTitleContainer flex align-items-center" style="margin-bottom:1em;">
+                <h2 class="sectionTitle">My Watchlist</h2>
+            </div>
+            <div id="wlLoading">Loading…</div>
+            <div id="wlEmpty">
+                <p>Your watchlist is empty.</p>
+                <p>Tap the <strong>🔖</strong> icon on any movie or series to add it here.</p>
+            </div>
+            <div id="wlGrid" class="itemsContainer vertical-wrap"></div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+    (function () {
+        var page = document.getElementById('watchlistTabPage');
+
+        async function loadWatchlist() {
+            var loading = document.getElementById('wlLoading');
+            var empty   = document.getElementById('wlEmpty');
+            var grid    = document.getElementById('wlGrid');
+
+            loading.style.display = '';
+            empty.classList.remove('visible');
+            grid.innerHTML = '';
+
+            try {
+                var token = window.ApiClient ? window.ApiClient.accessToken() : '';
+                var resp  = await fetch('/Watchlist/Items', {
+                    headers: { 'Authorization': 'MediaBrowser Token=' + token }
+                });
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                var entries = await resp.json();
+
+                loading.style.display = 'none';
+
+                if (!entries || entries.length === 0) {
+                    empty.classList.add('visible');
+                    return;
+                }
+
+                var ids     = entries.map(function (e) { return e.jellyfinItemId; }).join(',');
+                var userId  = window.ApiClient.getCurrentUserId();
+                var items   = await window.ApiClient.getItems(userId, {
+                    Ids:              ids,
+                    Fields:           'PrimaryImageAspectRatio,Overview',
+                    ImageTypeLimit:   1,
+                    EnableImageTypes: 'Primary,Thumb,Backdrop'
+                });
+
+                if (!items || !items.Items || items.Items.length === 0) {
+                    empty.classList.add('visible');
+                    return;
+                }
+
+                // Use Jellyfin's native cardBuilder for identical look to movies view
+                require(['cardBuilder', 'apphost'], function (cardBuilder, appHost) {
+                    cardBuilder.buildCards(items.Items, {
+                        itemsContainer:   grid,
+                        shape:            'portrait',
+                        showTitle:        true,
+                        showYear:         true,
+                        overlayPlayButton: true,
+                        overlayMoreButton: true,
+                        centerText:       false,
+                        cardLayout:       false,
+                        serverId:         window.ApiClient.serverId()
+                    });
+                });
+            } catch (e) {
+                loading.style.display = 'none';
+                grid.innerHTML = '<p style="color:#f87171;">Failed to load watchlist: ' + e.message + '</p>';
+            }
+        }
+
+        page.addEventListener('pageshow', loadWatchlist);
+    })();
+    </script>
+</div>
+</body>
+</html>

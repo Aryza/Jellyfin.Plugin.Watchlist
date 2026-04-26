@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Watchlist</title>
+</head>
+<body>
+<div id="WatchlistConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select">
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="WatchlistConfigForm">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle">Watchlist Settings</h2>
+                </div>
+                <div class="inputContainer">
+                    <label class="inputLabel inputLabelUnfocused" for="homeRowMaxItems">Home screen row — max items</label>
+                    <input type="number" id="homeRowMaxItems" class="emby-input" min="1" max="100" value="20" />
+                    <div class="fieldDescription">Maximum number of watchlist items shown in the home-screen row.</div>
+                </div>
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Save</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var WatchlistConfig = {
+            pluginUniqueId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+
+            loadConfig: function (page) {
+                ApiClient.getPluginConfiguration(WatchlistConfig.pluginUniqueId).then(function (config) {
+                    page.querySelector('#homeRowMaxItems').value = config.HomeRowMaxItems || 20;
+                });
+            },
+
+            saveConfig: function (page) {
+                ApiClient.getPluginConfiguration(WatchlistConfig.pluginUniqueId).then(function (config) {
+                    config.HomeRowMaxItems = parseInt(page.querySelector('#homeRowMaxItems').value, 10) || 20;
+                    ApiClient.updatePluginConfiguration(WatchlistConfig.pluginUniqueId, config).then(function () {
+                        Dashboard.processPluginConfigurationUpdateResult();
+                    });
+                });
+            }
+        };
+
+        document.querySelector('#WatchlistConfigPage').addEventListener('pageshow', function () {
+            WatchlistConfig.loadConfig(this);
+        });
+
+        document.querySelector('#WatchlistConfigForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            WatchlistConfig.saveConfig(document.querySelector('#WatchlistConfigPage'));
+        });
+    </script>
+</div>
+</body>
+</html>
