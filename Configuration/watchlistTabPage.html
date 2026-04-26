@@ -85,7 +85,10 @@
                 });
             } catch (e) {
                 loading.style.display = 'none';
-                grid.innerHTML = '<p style="color:#f87171;">Failed to load watchlist: ' + e.message + '</p>';
+                var errP = document.createElement('p');
+                errP.style.color = '#f87171';
+                errP.textContent = 'Failed to load watchlist: ' + e.message;
+                grid.appendChild(errP);
             }
         }
 
