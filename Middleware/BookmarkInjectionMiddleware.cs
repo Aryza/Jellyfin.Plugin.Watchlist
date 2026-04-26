@@ -79,7 +79,7 @@ public sealed class BookmarkInjectionMiddleware
                         } catch (e) { console.warn('Watchlist toggle error', e); }
                     });
 
-                    favBtn.parentNode.insertBefore(btn, favBtn.nextSibling);
+                    if (favBtn.parentNode) favBtn.parentNode.insertBefore(btn, favBtn.nextSibling);
                 } catch (e) {
                     console.warn('Watchlist inject error', e);
                 }

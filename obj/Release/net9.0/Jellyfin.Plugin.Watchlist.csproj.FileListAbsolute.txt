@@ -1,0 +1,15 @@
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/bin/Release/net9.0/Jellyfin.Plugin.Watchlist.deps.json
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/bin/Release/net9.0/Jellyfin.Plugin.Watchlist.dll
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/bin/Release/net9.0/Jellyfin.Plugin.Watchlist.pdb
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/bin/Release/net9.0/Jellyfin.Plugin.Watchlist.xml
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.csproj.AssemblyReference.cache
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.GeneratedMSBuildEditorConfig.editorconfig
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.AssemblyInfoInputs.cache
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.AssemblyInfo.cs
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.csproj.CoreCompileInputs.cache
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.dll
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/refint/Jellyfin.Plugin.Watchlist.dll
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.xml
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.pdb
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/ref/Jellyfin.Plugin.Watchlist.dll
+/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/obj/Release/net9.0/Jellyfin.Plugin.Watchlist.sourcelink.json

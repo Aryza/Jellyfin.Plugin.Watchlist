@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Jellyfin.Plugin.Watchlist</name>
+    </assembly>
+    <members>
+        <member name="P:Jellyfin.Plugin.Watchlist.Configuration.PluginConfiguration.HomeRowMaxItems">
+            <summary>Maximum items shown in the home-screen row.</summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.HomeSection.SectionPayload">
+            <summary>
+            Mirrors Jellyfin.Plugin.HomeScreenSections.Model.Dto.HomeScreenSectionPayload.
+            HSS deserialises into whatever type the handler method signature declares —
+            no compile-time reference to the HSS assembly is needed.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.HomeSection.SectionRegistrar">
+            <summary>
+            Registers the Watchlist home-screen row with IAmParadox27's HSS plugin,
+            and the Watchlist tab with IAmParadox27's CustomTabs plugin — both via
+            reflection at runtime so neither is a compile-time dependency.
+            Runs as an IHostedService so all plugins are loaded before registration.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.HomeSection.WatchlistSectionHandler">
+            <summary>
+            Returns the user's most recently bookmarked items as a home-screen row.
+            Invoked by the Home Screen Sections plugin via reflection.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Middleware.BookmarkInjectionMiddleware">
+            <summary>
+            Intercepts GET /web/index.html and injects the watchlist bookmark script.
+            Handles gzip/deflate/br compressed responses (e.g. from FileTransformation plugin).
+            </summary>
+        </member>
+        <member name="P:Jellyfin.Plugin.Watchlist.Models.WatchlistStore.Entries">
+            <summary>userId (Guid.ToString("N")) → ordered list of watchlist entries.</summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Services.WatchlistEventConsumer">
+            <summary>
+            Removes an item from the user's watchlist when Jellyfin marks it as played.
+            Fires for both manual "mark as played" and automatic 90%-threshold detection.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Services.WatchlistService">
+            <summary>
+            Thread-safe, JSON-backed watchlist store. One entry list per user.
+            All mutations acquire _lock; the on-disk file is rewritten on every change.
+            </summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Services.WatchlistService.Add(System.Guid,System.Guid,System.String)">
+            <summary>Adds item. No-ops if already present.</summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Services.WatchlistService.Remove(System.Guid,System.Guid)">
+            <summary>Removes item. Returns true if removed, false if not present.</summary>
+        </member>
+    </members>
+</doc>

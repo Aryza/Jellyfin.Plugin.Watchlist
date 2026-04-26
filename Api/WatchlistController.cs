@@ -64,10 +64,9 @@ public class WatchlistController : ControllerBase
         var userId = GetUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
-        if (!_watchlist.Contains(userId, itemId))
+        if (!_watchlist.Remove(userId, itemId))
             return NotFound(new { message = "Not in watchlist." });
 
-        _watchlist.Remove(userId, itemId);
         return Ok(new { inWatchlist = false });
     }
 

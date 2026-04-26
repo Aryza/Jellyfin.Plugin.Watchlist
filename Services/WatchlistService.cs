@@ -15,6 +15,7 @@ public sealed class WatchlistService
     private readonly string                    _storePath;
     private readonly ILogger<WatchlistService> _logger;
     private readonly object                    _lock = new();
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
     public WatchlistService(IApplicationPaths paths, ILogger<WatchlistService> logger)
     {
@@ -67,18 +68,19 @@ public sealed class WatchlistService
         }
     }
 
-    /// <summary>Removes item. No-ops if not present.</summary>
-    public void Remove(Guid userId, Guid itemId)
+    /// <summary>Removes item. Returns true if removed, false if not present.</summary>
+    public bool Remove(Guid userId, Guid itemId)
     {
         lock (_lock)
         {
             var store = Load();
             var key   = Key(userId);
-            if (!store.Entries.TryGetValue(key, out var list)) return;
+            if (!store.Entries.TryGetValue(key, out var list)) return false;
 
             var before = list.Count;
             list.RemoveAll(e => e.JellyfinItemId == itemId);
-            if (list.Count != before) Save(store);
+            if (list.Count != before) { Save(store); return true; }
+            return false;
         }
     }
 
@@ -105,7 +107,7 @@ public sealed class WatchlistService
     {
         try
         {
-            var json = JsonSerializer.Serialize(store, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(store, _jsonOptions);
             File.WriteAllText(_storePath, json);
         }
         catch (Exception ex)

@@ -28,9 +28,8 @@ public sealed class WatchlistEventConsumer : IEventConsumer<UserDataSaveEventArg
         var itemId = eventArgs.Item?.Id ?? Guid.Empty;
         if (itemId == Guid.Empty) return Task.CompletedTask;
 
-        if (_watchlist.Contains(userId, itemId))
+        if (_watchlist.Remove(userId, itemId))
         {
-            _watchlist.Remove(userId, itemId);
             _logger.LogInformation(
                 "Watchlist: auto-removed item {ItemId} for user {UserId} (marked played)",
                 itemId, userId);
