@@ -33,8 +33,7 @@ public sealed class WatchlistSectionHandler
 
     public QueryResult<BaseItemDto> GetResults(SectionPayload payload)
     {
-        // TODO(Task 8): replace 20 with Plugin.Instance?.Configuration.HomeRowMaxItems ?? 20
-        var maxItems = 20;
+        var maxItems = Plugin.Instance?.Configuration.HomeRowMaxItems ?? 20;
         var entries  = _watchlist.GetEntries(payload.UserId).Take(maxItems).ToList();
 
         var items = entries
