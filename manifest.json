@@ -1,0 +1,12 @@
+[
+  {
+    "guid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Watchlist",
+    "description": "Bookmark any movie or series from its detail page. Bookmarked items appear in a home-screen row and a dedicated Watchlist tab. Items auto-remove when marked as played.",
+    "overview": "Per-user watchlist with home-screen row and library tab.",
+    "owner": "Ary",
+    "category": "General",
+    "imageUrl": "",
+    "versions": []
+  }
+]
