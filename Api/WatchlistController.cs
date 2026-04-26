@@ -52,7 +52,7 @@ public class WatchlistController : ControllerBase
         var item = _library.GetItemById(itemId);
         if (item is null) return NotFound(new { message = "Item not found in library." });
 
-        var mediaType = item.GetType().Name; // "Movie", "Series", etc.
+        var mediaType = item.GetBaseItemKind().ToString(); // stable enum: Movie, Series, etc.
         _watchlist.Add(userId, itemId, mediaType);
         return Ok(new { inWatchlist = true });
     }
