@@ -89,6 +89,9 @@
         <member name="P:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload.Contents">
             <summary>Current file contents.</summary>
         </member>
+        <member name="P:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.InvocationCount">
+            <summary>Number of times File Transformation has invoked our callback (diagnostic).</summary>
+        </member>
         <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Transform(Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload)">
             <summary>
             File Transformation entry point. Returns the (possibly) modified HTML.

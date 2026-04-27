@@ -22,7 +22,7 @@ namespace Jellyfin.Plugin.Watchlist.Middleware;
 public sealed class BookmarkInjectionMiddleware : IMiddleware
 {
     private const string ScriptTag =
-        "\n    <script src=\"/Watchlist/watchlist.js\"></script>";
+        "\n    <script src=\"/Watchlist/watchlist.js?v=1.0.6.0\" defer></script>";
 
     private const string Marker = "/Watchlist/watchlist.js";
 
@@ -85,7 +85,9 @@ public sealed class BookmarkInjectionMiddleware : IMiddleware
         var bytes = Encoding.UTF8.GetBytes(html);
         context.Response.StatusCode    = 200;
         context.Response.ContentType   = "text/html; charset=utf-8";
-        context.Response.Headers["Cache-Control"] = "no-store";
+        context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+        context.Response.Headers["Pragma"]        = "no-cache";
+        context.Response.Headers["Expires"]       = "0";
         context.Response.ContentLength = bytes.Length;
         await context.Response.Body.WriteAsync(bytes);
     }
@@ -130,7 +132,9 @@ public sealed class BookmarkInjectionMiddleware : IMiddleware
         var bytes = Encoding.UTF8.GetBytes(html);
         if (!context.Response.HasStarted)
         {
-            context.Response.Headers["Cache-Control"] = "no-store";
+            context.Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0";
+        context.Response.Headers["Pragma"]        = "no-cache";
+        context.Response.Headers["Expires"]       = "0";
             context.Response.ContentLength            = bytes.Length;
         }
 

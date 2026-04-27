@@ -1,7 +1,7 @@
 ---
 name: "Watchlist"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version: "1.0.5.0"
+version: "1.0.6.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -15,9 +15,7 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.Watchlist.dll"
 changelog: |-
-  Integrate with IAmParadox27 File Transformation plugin. Other IAmParadox27
-  plugins (CustomTabs, HomeScreenSections, JavaScriptInjector) intercept
-  index.html via this transformer plugin and short-circuit raw middleware.
-  Now we register a transformation callback the same way they do, via reflection,
-  to inject our <script> tag before </body>. Middleware kept as fallback for
-  installs without File Transformation.
+  Diagnostic build: log every IndexHtmlTransformer.Transform invocation to
+  Jellyfin stdout. Cache-bust script src with ?v=1.0.6.0 to bypass browser/SW
+  caching of the JS file. Stronger no-cache headers (no-store, no-cache,
+  must-revalidate, max-age=0, Pragma, Expires) on injected index.html.

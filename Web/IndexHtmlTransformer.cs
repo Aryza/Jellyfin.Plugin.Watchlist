@@ -19,14 +19,24 @@ public static class IndexHtmlTransformer
     }
 
     private const string Marker    = "/Watchlist/watchlist.js";
-    private const string ScriptTag = "    <script src=\"/Watchlist/watchlist.js\" defer></script>\n";
+    private const string ScriptTag = "    <script src=\"/Watchlist/watchlist.js?v=1.0.6.0\" defer></script>\n";
+
+    private static int _invocationCount;
+
+    /// <summary>Number of times File Transformation has invoked our callback (diagnostic).</summary>
+    public static int InvocationCount => _invocationCount;
 
     /// <summary>
     /// File Transformation entry point. Returns the (possibly) modified HTML.
     /// </summary>
     public static string Transform(Payload payload)
     {
+        var n = System.Threading.Interlocked.Increment(ref _invocationCount);
         var html = payload?.Contents ?? string.Empty;
+        // Console.WriteLine surfaces in Jellyfin's stdout-captured log.
+        System.Console.WriteLine(
+            $"[Watchlist] IndexHtmlTransformer.Transform invoked (call #{n}, contents length={html.Length})");
+
         if (string.IsNullOrEmpty(html)) return html;
 
         // Idempotent: skip if already injected.
