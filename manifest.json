@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.4.0",
+        "changelog": "Diagnostic build with heavy console logging. Multi-strategy itemId extraction, multi-selector favorite button detection (.btnUserDataFavorite, .btnFavorite, [data-action=favorite], etc.), React Router pushState/replaceState patching. Open browser console to trace every step under [Watchlist] tag.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.4.0/watchlist_1.0.4.0.zip",
+        "checksum": "6189da633daf438c0ef6333f35f15d4f",
+        "timestamp": "2026-04-27T12:00:00Z"
+      },
+      {
         "version": "1.0.3.0",
         "changelog": "Rewrite injection to mirror BORNIOS/JellyTrend: drop IHostedService file patcher, serve watchlist.js as embedded resource at /Watchlist/watchlist.js, inject before </head>, skip buffered fallback if Content-Encoding is set. csproj uses ExcludeAssets=runtime + FrameworkReference Microsoft.AspNetCore.App.",
         "targetAbi": "10.11.0.0",
