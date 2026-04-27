@@ -1,7 +1,7 @@
 ---
 name: "Watchlist"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version: "1.0.4.0"
+version: "1.0.5.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -15,8 +15,9 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.Watchlist.dll"
 changelog: |-
-  Diagnostic build: heavy console logging in watchlist.js. Multi-strategy itemId
-  extraction (hash query, URL query, GUID in path). Multi-selector favorite button
-  detection (.btnUserDataFavorite, .btnFavorite, [data-action=favorite], etc.).
-  Patches history.pushState/replaceState to catch React Router navigations. Open
-  browser console — every step logs as [Watchlist] ...
+  Integrate with IAmParadox27 File Transformation plugin. Other IAmParadox27
+  plugins (CustomTabs, HomeScreenSections, JavaScriptInjector) intercept
+  index.html via this transformer plugin and short-circuit raw middleware.
+  Now we register a transformation callback the same way they do, via reflection,
+  to inject our <script> tag before </body>. Middleware kept as fallback for
+  installs without File Transformation.

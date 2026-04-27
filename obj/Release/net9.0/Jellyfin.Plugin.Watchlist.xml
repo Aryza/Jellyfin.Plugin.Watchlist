@@ -64,5 +64,35 @@
         <member name="M:Jellyfin.Plugin.Watchlist.Services.WatchlistService.Remove(System.Guid,System.Guid)">
             <summary>Removes item. Returns true if removed, false if not present.</summary>
         </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Web.FileTransformationRegistrar">
+             <summary>
+             Registers <see cref="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Transform(Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload)"/> with IAmParadox27's
+             File Transformation plugin (loaded into a separate AssemblyLoadContext, so
+             this is done via reflection — no compile-time dependency).
+            
+             Per File Transformation's README: locate its assembly across all load
+             contexts, get the static <c>PluginInterface.RegisterTransformation(JObject)</c>,
+             and invoke it with a payload pointing at our static callback method.
+             </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer">
+             <summary>
+             Callback invoked by IAmParadox27's File Transformation plugin.
+             Receives index.html contents, returns the modified HTML with our
+             bookmark script tag injected before &lt;/body&gt;.
+            
+             Must be static (FileTransformation invokes via reflection on null instance)
+             and take exactly one parameter that File Transformation can deserialise from
+             the {"contents":"..."} JObject it constructs.
+             </summary>
+        </member>
+        <member name="P:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload.Contents">
+            <summary>Current file contents.</summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Transform(Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload)">
+            <summary>
+            File Transformation entry point. Returns the (possibly) modified HTML.
+            </summary>
+        </member>
     </members>
 </doc>

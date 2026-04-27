@@ -2,6 +2,7 @@
 using Jellyfin.Plugin.Watchlist.HomeSection;
 using Jellyfin.Plugin.Watchlist.Middleware;
 using Jellyfin.Plugin.Watchlist.Services;
+using Jellyfin.Plugin.Watchlist.Web;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Events;
 using MediaBrowser.Controller.Library;
@@ -19,8 +20,13 @@ public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
         services.AddTransient<WatchlistSectionHandler>();
         services.AddHostedService<SectionRegistrar>();
         services.AddScoped<IEventConsumer<UserDataSaveEventArgs>, WatchlistEventConsumer>();
-        // IStartupFilter wraps the app builder to prepend BookmarkInjectionMiddleware,
-        // matching the pattern used by BORNIOS/JellyTrend.
+        // Primary injection path: register a callback with IAmParadox27's File
+        // Transformation plugin. This is the only mechanism that survives in
+        // installations where File Transformation intercepts /web/index.html
+        // ahead of any plugin middleware.
+        services.AddHostedService<FileTransformationRegistrar>();
+
+        // Fallback for installations without File Transformation.
         services.AddTransient<IStartupFilter, BookmarkMiddlewareStartupFilter>();
         services.AddTransient<BookmarkInjectionMiddleware>();
     }
