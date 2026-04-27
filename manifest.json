@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.5.0",
+        "changelog": "Integrate with IAmParadox27 File Transformation plugin. Other IAmParadox27 plugins inject scripts via File Transformation; raw middleware loses the race against it. Now we register a transformation callback the same way they do, via reflection. Middleware kept as fallback.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.5.0/watchlist_1.0.5.0.zip",
+        "checksum": "610fbcc3ed043f4d7ddc5fdffc092a58",
+        "timestamp": "2026-04-28T08:00:00Z"
+      },
+      {
         "version": "1.0.4.0",
         "changelog": "Diagnostic build with heavy console logging. Multi-strategy itemId extraction, multi-selector favorite button detection (.btnUserDataFavorite, .btnFavorite, [data-action=favorite], etc.), React Router pushState/replaceState patching. Open browser console to trace every step under [Watchlist] tag.",
         "targetAbi": "10.11.0.0",
