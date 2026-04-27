@@ -1,7 +1,10 @@
 (function () {
     'use strict';
 
-    function getToken() {
+    var TAG = '[Watchlist]';
+    console.log(TAG, 'script loaded, version 1.0.4.0');
+
+    function token() {
         try {
             return window.ApiClient && window.ApiClient.accessToken
                 ? window.ApiClient.accessToken()
@@ -9,79 +12,197 @@
         } catch (_) { return null; }
     }
 
+    function authHeaders() {
+        var t = token();
+        return t ? { 'Authorization': 'MediaBrowser Token=' + t } : {};
+    }
+
+    // Try every known way to extract the current item id from the URL.
     function getItemId() {
+        var url = window.location.href;
         var hash = window.location.hash || '';
-        var qs = hash.indexOf('?') >= 0 ? hash.slice(hash.indexOf('?') + 1) : '';
-        var params = new URLSearchParams(qs);
-        return params.get('id') || params.get('itemId');
+        var pathname = window.location.pathname || '';
+
+        // Strategy 1: query string in hash, ?id=xxx or ?itemId=xxx
+        var qIdx = hash.indexOf('?');
+        if (qIdx >= 0) {
+            var p = new URLSearchParams(hash.slice(qIdx + 1));
+            var v = p.get('id') || p.get('itemId');
+            if (v) return v;
+        }
+
+        // Strategy 2: query string in real URL
+        if (window.location.search) {
+            var p2 = new URLSearchParams(window.location.search);
+            var v2 = p2.get('id') || p2.get('itemId');
+            if (v2) return v2;
+        }
+
+        // Strategy 3: path segment that looks like a GUID (hex with optional dashes, 32+ chars)
+        var guidRe = /([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})/i;
+        var m = url.match(guidRe);
+        if (m) return m[1].replace(/-/g, '');
+
+        return null;
     }
 
-    function authHeader() {
-        var token = getToken();
-        return token ? { 'Authorization': 'MediaBrowser Token=' + token } : {};
+    function looksLikeDetailsPage() {
+        var url = (window.location.href || '').toLowerCase();
+        return url.includes('details')
+            || url.includes('/item')
+            || url.includes('itemid=')
+            || url.includes('?id=');
     }
 
-    var _inWatchlist = false;
+    // Selectors for the favorite/heart button across Jellyfin web versions.
+    var FAV_SELECTORS = [
+        '.btnUserDataFavorite',         // newer
+        '.btnFavorite',                 // legacy
+        'button[data-action="favorite"]',
+        'button[is="emby-button"][data-action="favorite"]',
+        '.detailButton[data-action="favorite"]',
+        '[data-favorite] button',
+        'button[title*="avorite" i]'
+    ];
 
-    function updateBtn(btn, inWl) {
-        _inWatchlist = inWl;
+    function findFavBtn() {
+        for (var i = 0; i < FAV_SELECTORS.length; i++) {
+            var els = document.querySelectorAll(FAV_SELECTORS[i]);
+            if (els.length > 0) {
+                console.log(TAG, 'found favorite button via selector:', FAV_SELECTORS[i], '(' + els.length + ' matches)');
+                return els[0];
+            }
+        }
+        return null;
+    }
+
+    var _state = {};
+
+    function buttonStateFor(itemId, inWatchlist) {
+        _state[itemId] = inWatchlist;
+    }
+
+    function applyButtonState(btn, inWl) {
         btn.title = inWl ? 'Remove from Watchlist' : 'Add to Watchlist';
         btn.style.color = inWl ? 'var(--theme-button-focus-color, #00a4dc)' : '';
+        btn.setAttribute('data-watchlist-state', inWl ? '1' : '0');
     }
 
-    function createBtn() {
+    function makeButton(refBtn) {
         var btn = document.createElement('button');
-        btn.className = 'btnWatchlistToggle paper-icon-button-light';
+        // Copy class from the reference button so styling matches its environment.
+        btn.className = (refBtn && refBtn.className ? refBtn.className : 'paper-icon-button-light')
+            + ' btnWatchlistToggle';
         btn.type = 'button';
-        btn.innerHTML = '<span class="material-icons md-18">bookmark</span>';
+        btn.innerHTML = '<span class="material-icons md-18" aria-hidden="true">bookmark</span>';
         btn.style.cssText = 'cursor:pointer;';
         return btn;
     }
 
-    async function injectButton() {
+    async function ensureButton() {
+        if (!looksLikeDetailsPage()) return;
+
         var itemId = getItemId();
-        if (!itemId) return;
+        if (!itemId) {
+            console.log(TAG, 'no itemId in URL', window.location.href);
+            return;
+        }
 
-        var hash = window.location.hash || '';
-        if (!hash.includes('details') && !hash.includes('item')) return;
+        if (document.querySelector('.btnWatchlistToggle')) return; // already injected
 
-        var favBtn = document.querySelector('.btnFavorite');
-        if (!favBtn || document.querySelector('.btnWatchlistToggle')) return;
+        var favBtn = findFavBtn();
+        if (!favBtn) {
+            console.log(TAG, 'favorite button not found yet for itemId', itemId);
+            return;
+        }
+
+        console.log(TAG, 'injecting bookmark button for itemId', itemId);
+        var btn = makeButton(favBtn);
 
         try {
-            var resp = await fetch('/Watchlist/Status/' + itemId, { headers: authHeader() });
-            if (!resp.ok) return;
+            var resp = await fetch('/Watchlist/Status/' + itemId, { headers: authHeaders() });
+            if (!resp.ok) {
+                console.warn(TAG, 'Status fetch failed:', resp.status, resp.statusText);
+                return;
+            }
             var data = await resp.json();
-            var btn = createBtn();
-            updateBtn(btn, data.inWatchlist);
-
-            btn.addEventListener('click', async function () {
-                var method = _inWatchlist ? 'DELETE' : 'POST';
-                var url = '/Watchlist/Items/' + itemId;
-                try {
-                    var r = await fetch(url, { method: method, headers: authHeader() });
-                    if (r.ok) updateBtn(btn, !_inWatchlist);
-                } catch (e) { console.warn('Watchlist toggle error', e); }
-            });
-
-            if (favBtn.parentNode) favBtn.parentNode.insertBefore(btn, favBtn.nextSibling);
+            buttonStateFor(itemId, data.inWatchlist);
+            applyButtonState(btn, data.inWatchlist);
         } catch (e) {
-            console.warn('Watchlist inject error', e);
+            console.warn(TAG, 'Status fetch error', e);
+            return;
+        }
+
+        btn.addEventListener('click', async function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            var current = btn.getAttribute('data-watchlist-state') === '1';
+            var method = current ? 'DELETE' : 'POST';
+            try {
+                var r = await fetch('/Watchlist/Items/' + itemId, {
+                    method: method,
+                    headers: authHeaders()
+                });
+                if (r.ok) {
+                    applyButtonState(btn, !current);
+                    console.log(TAG, method, 'OK for', itemId);
+                } else {
+                    console.warn(TAG, method, 'failed:', r.status, await r.text());
+                }
+            } catch (e) {
+                console.warn(TAG, 'toggle error', e);
+            }
+        });
+
+        // Insert directly after the favorite button.
+        if (favBtn.parentNode) {
+            favBtn.parentNode.insertBefore(btn, favBtn.nextSibling);
+            console.log(TAG, 'bookmark button inserted');
         }
     }
 
-    var _lastHash = '';
-    var observer = new MutationObserver(function () {
-        var h = window.location.hash;
-        if (h !== _lastHash) { _lastHash = h; setTimeout(injectButton, 400); }
-    });
-    document.addEventListener('DOMContentLoaded', function () {
-        observer.observe(document.body, { childList: true, subtree: true });
-        setTimeout(injectButton, 400);
-    });
+    // Aggressive observation: SPA navigations + DOM mutations.
+    function startObserver() {
+        var lastUrl = '';
+        var debounce = null;
 
-    if (document.readyState !== 'loading') {
-        observer.observe(document.body, { childList: true, subtree: true });
-        setTimeout(injectButton, 400);
+        function tick(reason) {
+            if (debounce) clearTimeout(debounce);
+            debounce = setTimeout(function () {
+                if (window.location.href !== lastUrl) {
+                    lastUrl = window.location.href;
+                    console.log(TAG, 'navigation detected (' + reason + '):', lastUrl);
+                }
+                ensureButton();
+            }, 250);
+        }
+
+        var mo = new MutationObserver(function () { tick('mutation'); });
+        mo.observe(document.body, { childList: true, subtree: true });
+
+        window.addEventListener('hashchange', function () { tick('hashchange'); });
+        window.addEventListener('popstate',   function () { tick('popstate'); });
+
+        // Patch pushState/replaceState so we catch React Router navigations.
+        ['pushState', 'replaceState'].forEach(function (m) {
+            var orig = history[m];
+            history[m] = function () {
+                var r = orig.apply(this, arguments);
+                tick(m);
+                return r;
+            };
+        });
+
+        // Initial attempt + retries during boot.
+        tick('initial');
+        setTimeout(function () { tick('boot-1'); }, 1000);
+        setTimeout(function () { tick('boot-2'); }, 3000);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startObserver);
+    } else {
+        startObserver();
     }
 })();

@@ -1,7 +1,7 @@
 ---
 name: "Watchlist"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version: "1.0.3.0"
+version: "1.0.4.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -15,7 +15,8 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.Watchlist.dll"
 changelog: |-
-  Rewrite injection to mirror BORNIOS/JellyTrend: drop IHostedService file patcher,
-  serve watchlist.js as embedded resource via /Watchlist/watchlist.js, inject before
-  </head> instead of </body>, skip buffered fallback if Content-Encoding header is
-  already set. csproj uses ExcludeAssets=runtime + FrameworkReference Microsoft.AspNetCore.App.
+  Diagnostic build: heavy console logging in watchlist.js. Multi-strategy itemId
+  extraction (hash query, URL query, GUID in path). Multi-selector favorite button
+  detection (.btnUserDataFavorite, .btnFavorite, [data-action=favorite], etc.).
+  Patches history.pushState/replaceState to catch React Router navigations. Open
+  browser console — every step logs as [Watchlist] ...
