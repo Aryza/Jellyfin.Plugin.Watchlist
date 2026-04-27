@@ -5,7 +5,7 @@
   },
   "projects": {
     "/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/Jellyfin.Plugin.Watchlist.csproj": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "restore": {
         "projectUniqueName": "/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/Jellyfin.Plugin.Watchlist.csproj",
         "projectName": "Jellyfin.Plugin.Watchlist",

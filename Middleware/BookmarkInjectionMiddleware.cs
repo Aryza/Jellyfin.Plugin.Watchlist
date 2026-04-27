@@ -1,6 +1,7 @@
 // Middleware/BookmarkInjectionMiddleware.cs
 using System.IO.Compression;
 using System.Text;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -8,176 +9,149 @@ namespace Jellyfin.Plugin.Watchlist.Middleware;
 
 /// <summary>
 /// Intercepts GET /web/index.html and injects the watchlist bookmark script.
+/// Primary path: serve index.html directly from disk with script injected.
+/// Fallback path: buffer the downstream response and rewrite on the fly.
 /// Handles gzip/deflate/br compressed responses (e.g. from FileTransformation plugin).
+/// Implements <see cref="IMiddleware"/> so ASP.NET resolves it from DI per request
+/// (the same pattern that worked in MissingMediaChecker's ScriptInjectionMiddleware).
 /// </summary>
-public sealed class BookmarkInjectionMiddleware
+public sealed class BookmarkInjectionMiddleware : IMiddleware
 {
-    private const string ScriptTag = """
-        <script>
-        (function () {
-            'use strict';
+    private const string Marker    = "btnWatchlistToggle";
+    private const string ScriptTag = "\n    <script src=\"/Watchlist/inject.js\" defer></script>";
 
-            function getToken() {
-                try { return window.ApiClient && window.ApiClient.accessToken ? window.ApiClient.accessToken() : null; } catch { return null; }
-            }
+    private readonly IWebHostEnvironment                   _env;
+    private readonly ILogger<BookmarkInjectionMiddleware>  _logger;
 
-            function getItemId() {
-                var hash = window.location.hash || '';
-                var qs   = hash.indexOf('?') >= 0 ? hash.slice(hash.indexOf('?') + 1) : '';
-                var params = new URLSearchParams(qs);
-                return params.get('id') || params.get('itemId');
-            }
-
-            function authHeader() {
-                var token = getToken();
-                return token ? { 'Authorization': 'MediaBrowser Token=' + token } : {};
-            }
-
-            var _inWatchlist = false;
-
-            function updateBtn(btn, inWl) {
-                _inWatchlist    = inWl;
-                btn.title       = inWl ? 'Remove from Watchlist' : 'Add to Watchlist';
-                btn.style.color = inWl ? 'var(--theme-button-focus-color, #00a4dc)' : '';
-            }
-
-            function createBtn() {
-                var btn = document.createElement('button');
-                btn.className         = 'btnWatchlistToggle paper-icon-button-light';
-                btn.type              = 'button';
-                btn.innerHTML         = '<span class="material-icons md-18">bookmark</span>';
-                btn.style.cssText     = 'cursor:pointer;';
-                return btn;
-            }
-
-            async function injectButton() {
-                var itemId = getItemId();
-                if (!itemId) return;
-
-                // Skip non-detail pages
-                var hash = window.location.hash || '';
-                if (!hash.includes('details') && !hash.includes('item')) return;
-
-                // Wait for favourite button to appear
-                var favBtn = document.querySelector('.btnFavorite');
-                if (!favBtn || document.querySelector('.btnWatchlistToggle')) return;
-
-                // Check current status
-                try {
-                    var resp = await fetch('/Watchlist/Status/' + itemId, { headers: authHeader() });
-                    if (!resp.ok) return;
-                    var data = await resp.json();
-                    var btn  = createBtn();
-                    updateBtn(btn, data.inWatchlist);
-
-                    btn.addEventListener('click', async function () {
-                        var method = _inWatchlist ? 'DELETE' : 'POST';
-                        var url    = '/Watchlist/Items/' + itemId;
-                        try {
-                            var r = await fetch(url, { method: method, headers: authHeader() });
-                            if (r.ok) updateBtn(btn, !_inWatchlist);
-                        } catch (e) { console.warn('Watchlist toggle error', e); }
-                    });
-
-                    if (favBtn.parentNode) favBtn.parentNode.insertBefore(btn, favBtn.nextSibling);
-                } catch (e) {
-                    console.warn('Watchlist inject error', e);
-                }
-            }
-
-            // Re-inject on SPA navigation
-            var _lastHash = '';
-            var observer  = new MutationObserver(function () {
-                var h = window.location.hash;
-                if (h !== _lastHash) { _lastHash = h; setTimeout(injectButton, 400); }
-            });
-            document.addEventListener('DOMContentLoaded', function () {
-                observer.observe(document.body, { childList: true, subtree: true });
-            });
-        })();
-        </script>
-        """;
-
-    private readonly RequestDelegate                      _next;
-    private readonly ILogger<BookmarkInjectionMiddleware> _logger;
-
-    public BookmarkInjectionMiddleware(RequestDelegate next, ILogger<BookmarkInjectionMiddleware> logger)
+    public BookmarkInjectionMiddleware(
+        IWebHostEnvironment env,
+        ILogger<BookmarkInjectionMiddleware> logger)
     {
-        _next   = next;
+        _env    = env;
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        var path = context.Request.Path.Value ?? string.Empty;
-
-        // Only intercept index.html GETs
-        if (!context.Request.Method.Equals("GET", StringComparison.OrdinalIgnoreCase)
-            || !path.EndsWith("index.html", StringComparison.OrdinalIgnoreCase))
+        if (!ShouldIntercept(context))
         {
-            await _next(context);
+            await next(context).ConfigureAwait(false);
             return;
         }
 
-        // Buffer the downstream response
-        var originalBody = context.Response.Body;
-        using var buffer = new MemoryStream();
-        context.Response.Body = buffer;
+        var indexPath = ResolveIndexHtmlPath();
+        if (indexPath is not null)
+        {
+            await ServeDirectAsync(context, indexPath).ConfigureAwait(false);
+            return;
+        }
 
-        await _next(context);
+        await ServeBufferedAsync(context, next).ConfigureAwait(false);
+    }
 
-        buffer.Seek(0, SeekOrigin.Begin);
-        var encoding = context.Response.Headers.ContentEncoding.ToString();
-        string html;
+    private static bool ShouldIntercept(HttpContext context)
+    {
+        if (!HttpMethods.IsGet(context.Request.Method)) return false;
 
+        var path = context.Request.Path.Value ?? string.Empty;
+        return path == "/"
+            || path.Equals("/index.html",      StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/web/index.html",  StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/web/",            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string? ResolveIndexHtmlPath()
+    {
+        var webRoot = _env.WebRootPath;
+        if (string.IsNullOrEmpty(webRoot) || !Directory.Exists(webRoot)) return null;
+
+        var baseDir = Directory.GetParent(webRoot)?.FullName;
+        if (baseDir is not null)
+        {
+            foreach (var subdir in new[] { "jellyfin-web", "web" })
+            {
+                var candidate = Path.Combine(baseDir, subdir, "index.html");
+                if (File.Exists(candidate)) return candidate;
+            }
+        }
+
+        var direct = Path.Combine(webRoot, "index.html");
+        return File.Exists(direct) ? direct : null;
+    }
+
+    private async Task ServeDirectAsync(HttpContext context, string indexPath)
+    {
         try
         {
-            html = await DecompressAsync(buffer, encoding);
+            var html = await File.ReadAllTextAsync(indexPath, context.RequestAborted).ConfigureAwait(false);
+
+            if (!html.Contains(Marker, StringComparison.Ordinal)
+                && html.Contains("</body>", StringComparison.OrdinalIgnoreCase))
+            {
+                html = html.Replace("</body>", ScriptTag + "\n</body>", StringComparison.OrdinalIgnoreCase);
+            }
+
+            context.Response.ContentType = "text/html; charset=utf-8";
+            context.Response.Headers["Cache-Control"] = "no-store";
+            await context.Response.WriteAsync(html, context.RequestAborted).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Watchlist: failed to decompress index.html ({Encoding}); skipping injection", encoding);
-            buffer.Seek(0, SeekOrigin.Begin);
-            context.Response.Body = originalBody;
-            await buffer.CopyToAsync(originalBody);
-            return;
-        }
-
-        if (html.Contains("</body>", StringComparison.OrdinalIgnoreCase))
-        {
-            html = html.Replace("</body>", ScriptTag + "</body>", StringComparison.OrdinalIgnoreCase);
-            context.Response.Headers.Remove("Content-Encoding");
-            context.Response.Headers.Remove("Content-Length");
-            var bytes = Encoding.UTF8.GetBytes(html);
-            context.Response.Body = originalBody;
-            context.Response.ContentLength = bytes.Length;
-            await originalBody.WriteAsync(bytes);
-        }
-        else
-        {
-            buffer.Seek(0, SeekOrigin.Begin);
-            context.Response.Body = originalBody;
-            await buffer.CopyToAsync(originalBody);
+            _logger.LogWarning(ex, "Watchlist: direct index.html injection failed, falling back to buffered path");
+            // Let it fall through — caller will try buffered path next time or
+            // the response is already partially written; swallow the error gracefully.
         }
     }
 
-    private static async Task<string> DecompressAsync(Stream stream, string encoding)
+    private async Task ServeBufferedAsync(HttpContext context, RequestDelegate next)
     {
-        if (string.IsNullOrEmpty(encoding) || encoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
+        var original = context.Response.Body;
+        using var buffer = new MemoryStream();
+        context.Response.Body = buffer;
+
+        try
         {
-            using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
-            return await reader.ReadToEndAsync();
+            await next(context).ConfigureAwait(false);
+
+            context.Response.Body = original;
+            buffer.Position = 0;
+
+            var ct       = context.Response.ContentType ?? string.Empty;
+            var encoding = context.Response.Headers.ContentEncoding.ToString();
+
+            if (!ct.Contains("text/html", StringComparison.OrdinalIgnoreCase))
+            {
+                await buffer.CopyToAsync(original, context.RequestAborted).ConfigureAwait(false);
+                return;
+            }
+
+            Stream readStream = encoding switch
+            {
+                var e when e.Contains("gzip",    StringComparison.OrdinalIgnoreCase) => new GZipStream(buffer,    CompressionMode.Decompress, leaveOpen: true),
+                var e when e.Contains("deflate", StringComparison.OrdinalIgnoreCase) => new DeflateStream(buffer, CompressionMode.Decompress, leaveOpen: true),
+                var e when e.Contains("br",      StringComparison.OrdinalIgnoreCase) => new BrotliStream(buffer,  CompressionMode.Decompress, leaveOpen: true),
+                _                                                                     => buffer
+            };
+
+            string html;
+            using (readStream)
+            using (var reader = new StreamReader(readStream, leaveOpen: false))
+                html = await reader.ReadToEndAsync(context.RequestAborted).ConfigureAwait(false);
+
+            if (!html.Contains(Marker, StringComparison.Ordinal)
+                && html.Contains("</body>", StringComparison.OrdinalIgnoreCase))
+            {
+                html = html.Replace("</body>", ScriptTag + "\n</body>", StringComparison.OrdinalIgnoreCase);
+            }
+
+            context.Response.Headers.Remove("Content-Encoding");
+            context.Response.Headers["Cache-Control"] = "no-store";
+            context.Response.ContentLength = null;
+            await context.Response.WriteAsync(html, context.RequestAborted).ConfigureAwait(false);
         }
-
-        Stream decompressed = encoding.ToLowerInvariant() switch
+        finally
         {
-            "gzip"    => new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true),
-            "deflate" => new DeflateStream(stream, CompressionMode.Decompress, leaveOpen: true),
-            "br"      => new BrotliStream(stream, CompressionMode.Decompress, leaveOpen: true),
-            _         => stream
-        };
-
-        using var r = new StreamReader(decompressed, Encoding.UTF8);
-        return await r.ReadToEndAsync();
+            context.Response.Body = original;
+        }
     }
 }

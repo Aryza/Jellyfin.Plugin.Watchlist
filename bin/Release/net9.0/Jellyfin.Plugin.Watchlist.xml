@@ -31,7 +31,11 @@
         <member name="T:Jellyfin.Plugin.Watchlist.Middleware.BookmarkInjectionMiddleware">
             <summary>
             Intercepts GET /web/index.html and injects the watchlist bookmark script.
+            Primary path: serve index.html directly from disk with script injected.
+            Fallback path: buffer the downstream response and rewrite on the fly.
             Handles gzip/deflate/br compressed responses (e.g. from FileTransformation plugin).
+            Implements <see cref="T:Microsoft.AspNetCore.Http.IMiddleware"/> so ASP.NET resolves it from DI per request
+            (the same pattern that worked in MissingMediaChecker's ScriptInjectionMiddleware).
             </summary>
         </member>
         <member name="P:Jellyfin.Plugin.Watchlist.Models.WatchlistStore.Entries">
