@@ -1,7 +1,7 @@
 ---
 name: "Watchlist"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version: "1.0.7.0"
+version: "1.0.8.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -15,7 +15,9 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.Watchlist.dll"
 changelog: |-
-  Diagnostic: replace Console.WriteLine with Jellyfin ILogger (cached statically
-  via SetLogger at registrar startup) so Transform invocation count appears in
-  Jellyfin logs. Inject extra <meta name="watchlist-plugin-marker"> tag so
-  presence in browser DOM can be verified independently of the script execution.
+  Fix bookmark icon injection. FileTransformation keys callback pipelines by
+  exact pattern string with a direct dict-lookup taking priority over regex
+  fallback. Other IAmParadox27 plugins register under the literal pattern
+  "index.html"; we were registering under "index\.html" which produced a
+  separate (unreachable) pipeline. Switch to "index.html" so our callback
+  joins the same pipeline that actually runs.

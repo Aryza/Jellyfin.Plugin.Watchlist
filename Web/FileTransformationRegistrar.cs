@@ -56,7 +56,11 @@ public sealed class FileTransformationRegistrar : IHostedService
             var payload = new JObject
             {
                 ["id"]               = TransformationId.ToString(),
-                ["fileNamePattern"]  = "index\\.html",
+                // Must match the literal pattern other IAmParadox27 plugins use ("index.html",
+                // not "index\\.html") — FileTransformation keys pipelines by exact pattern
+                // string and prefers direct dict-key matches over regex fallback. Using a
+                // different key puts our callback in its own (unreachable) pipeline.
+                ["fileNamePattern"]  = "index.html",
                 ["callbackAssembly"] = ourAssembly.FullName,
                 ["callbackClass"]    = typeof(IndexHtmlTransformer).FullName,
                 ["callbackMethod"]   = nameof(IndexHtmlTransformer.Transform)
