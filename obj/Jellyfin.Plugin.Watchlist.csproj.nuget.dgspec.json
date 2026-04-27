@@ -5,7 +5,7 @@
   },
   "projects": {
     "/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/Jellyfin.Plugin.Watchlist.csproj": {
-      "version": "1.0.2",
+      "version": "1.0.3",
       "restore": {
         "projectUniqueName": "/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/Jellyfin.Plugin.Watchlist.csproj",
         "projectName": "Jellyfin.Plugin.Watchlist",
@@ -45,10 +45,12 @@
           "targetAlias": "net9.0",
           "dependencies": {
             "Jellyfin.Controller": {
+              "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "target": "Package",
               "version": "[10.11.*, )"
             },
             "Jellyfin.Model": {
+              "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "target": "Package",
               "version": "[10.11.*, )"
             },
@@ -69,6 +71,9 @@
           "assetTargetFallback": true,
           "warn": true,
           "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }

@@ -10,7 +10,7 @@
           }
         },
         "runtime": {
-          "lib/net6.0/BitFaster.Caching.dll": {
+          "lib/net6.0/_._": {
             "related": ".xml"
           }
         }
@@ -23,7 +23,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Diacritics.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         }
@@ -40,7 +40,7 @@
           }
         },
         "runtime": {
-          "lib/netstandard2.0/ICU4N.dll": {
+          "lib/netstandard2.0/_._": {
             "related": ".xml"
           }
         }
@@ -56,7 +56,7 @@
           }
         },
         "runtime": {
-          "lib/netstandard2.0/ICU4N.Transliterator.dll": {
+          "lib/netstandard2.0/_._": {
             "related": ".xml"
           }
         }
@@ -69,7 +69,7 @@
           }
         },
         "runtime": {
-          "lib/net6.0/J2N.dll": {
+          "lib/net6.0/_._": {
             "related": ".xml"
           }
         }
@@ -87,7 +87,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/MediaBrowser.Common.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -113,7 +113,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/MediaBrowser.Controller.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         }
@@ -130,7 +130,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Jellyfin.Data.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         }
@@ -147,7 +147,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Jellyfin.Database.Implementations.dll": {
+          "lib/net9.0/_._": {
             "related": ".runtimeconfig.json;.xml"
           }
         }
@@ -164,7 +164,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Jellyfin.Extensions.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         }
@@ -181,7 +181,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Jellyfin.MediaEncoding.Keyframes.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         }
@@ -201,7 +201,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/MediaBrowser.Model.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -221,7 +221,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Emby.Naming.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         }
@@ -240,7 +240,7 @@
           }
         },
         "runtime": {
-          "lib/net8.0/Microsoft.EntityFrameworkCore.dll": {
+          "lib/net8.0/_._": {
             "related": ".xml"
           }
         },
@@ -256,7 +256,7 @@
           }
         },
         "runtime": {
-          "lib/net8.0/Microsoft.EntityFrameworkCore.Abstractions.dll": {
+          "lib/net8.0/_._": {
             "related": ".xml"
           }
         }
@@ -278,7 +278,7 @@
           }
         },
         "runtime": {
-          "lib/net8.0/Microsoft.EntityFrameworkCore.Relational.dll": {
+          "lib/net8.0/_._": {
             "related": ".xml"
           }
         }
@@ -294,7 +294,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Caching.Abstractions.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -317,7 +317,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Caching.Memory.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -336,7 +336,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Configuration.Abstractions.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -355,7 +355,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Configuration.Binder.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -374,7 +374,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.DependencyInjection.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -390,7 +390,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -411,7 +411,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Logging.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -430,7 +430,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -450,7 +450,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Options.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -466,7 +466,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/Microsoft.Extensions.Primitives.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -500,7 +500,7 @@
           }
         },
         "runtime": {
-          "lib/netstandard2.0/NEbml.Core.dll": {
+          "lib/netstandard2.0/_._": {
             "related": ".xml"
           }
         }
@@ -529,7 +529,7 @@
           }
         },
         "runtime": {
-          "lib/net6.0/Polly.dll": {
+          "lib/net6.0/_._": {
             "related": ".pdb;.xml"
           }
         }
@@ -542,7 +542,7 @@
           }
         },
         "runtime": {
-          "lib/net8.0/Polly.Core.dll": {
+          "lib/net8.0/_._": {
             "related": ".pdb;.xml"
           }
         }
@@ -580,7 +580,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/System.Text.Json.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -596,7 +596,7 @@
           }
         },
         "runtime": {
-          "lib/net9.0/System.Threading.Tasks.Dataflow.dll": {
+          "lib/net9.0/_._": {
             "related": ".xml"
           }
         },
@@ -1643,7 +1643,7 @@
     "/Users/ary/.nuget/packages/": {}
   },
   "project": {
-    "version": "1.0.2",
+    "version": "1.0.3",
     "restore": {
       "projectUniqueName": "/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/Jellyfin.Plugin.Watchlist.csproj",
       "projectName": "Jellyfin.Plugin.Watchlist",
@@ -1683,10 +1683,12 @@
         "targetAlias": "net9.0",
         "dependencies": {
           "Jellyfin.Controller": {
+            "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "target": "Package",
             "version": "[10.11.*, )"
           },
           "Jellyfin.Model": {
+            "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "target": "Package",
             "version": "[10.11.*, )"
           },
@@ -1707,6 +1709,9 @@
         "assetTargetFallback": true,
         "warn": true,
         "frameworkReferences": {
+          "Microsoft.AspNetCore.App": {
+            "privateAssets": "none"
+          },
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }

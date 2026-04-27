@@ -29,22 +29,19 @@
             </summary>
         </member>
         <member name="T:Jellyfin.Plugin.Watchlist.Middleware.BookmarkInjectionMiddleware">
-            <summary>
-            Intercepts GET /web/index.html and injects the watchlist bookmark script.
-            Primary path: serve index.html directly from disk with script injected.
-            Fallback path: buffer the downstream response and rewrite on the fly.
-            Handles gzip/deflate/br compressed responses (e.g. from FileTransformation plugin).
-            Implements <see cref="T:Microsoft.AspNetCore.Http.IMiddleware"/> so ASP.NET resolves it from DI per request
-            (the same pattern that worked in MissingMediaChecker's ScriptInjectionMiddleware).
-            </summary>
-        </member>
-        <member name="T:Jellyfin.Plugin.Watchlist.Middleware.IndexHtmlPatcher">
-            <summary>
-            Patches Jellyfin Web's index.html on disk at startup to inject the watchlist
-            bookmark script tag. Runs independently of ASP.NET middleware pipeline ordering,
-            so it works even if IStartupFilter registration is unreliable in Jellyfin's
-            plugin loading sequence.
-            </summary>
+             <summary>
+             Injects the watchlist bookmark script tag into Jellyfin Web's index.html.
+            
+             Strategies (in order):
+               1. Direct — resolves index.html relative to WebRootPath and serves the
+                  modified file directly (works for standard on-premise Jellyfin installs).
+               2. Buffer — captures the response body from the pipeline as a fallback.
+            
+             Both strategies set Cache-Control: no-store so the injected page is never
+             cached at CDN/proxy layers.
+            
+             Pattern mirrors BORNIOS/JellyTrend's ScriptInjectionMiddleware.
+             </summary>
         </member>
         <member name="P:Jellyfin.Plugin.Watchlist.Models.WatchlistStore.Entries">
             <summary>userId (Guid.ToString("N")) → ordered list of watchlist entries.</summary>

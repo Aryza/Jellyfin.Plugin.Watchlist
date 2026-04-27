@@ -19,8 +19,9 @@ public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
         services.AddTransient<WatchlistSectionHandler>();
         services.AddHostedService<SectionRegistrar>();
         services.AddScoped<IEventConsumer<UserDataSaveEventArgs>, WatchlistEventConsumer>();
-        services.AddTransient<BookmarkInjectionMiddleware>();
+        // IStartupFilter wraps the app builder to prepend BookmarkInjectionMiddleware,
+        // matching the pattern used by BORNIOS/JellyTrend.
         services.AddTransient<IStartupFilter, BookmarkMiddlewareStartupFilter>();
-        services.AddHostedService<IndexHtmlPatcher>();
+        services.AddTransient<BookmarkInjectionMiddleware>();
     }
 }

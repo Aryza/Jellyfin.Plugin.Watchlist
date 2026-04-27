@@ -1,5 +1,4 @@
 // Middleware/BookmarkInjectionMiddleware.cs
-using System.IO.Compression;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -8,24 +7,29 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.Watchlist.Middleware;
 
 /// <summary>
-/// Intercepts GET /web/index.html and injects the watchlist bookmark script.
-/// Primary path: serve index.html directly from disk with script injected.
-/// Fallback path: buffer the downstream response and rewrite on the fly.
-/// Handles gzip/deflate/br compressed responses (e.g. from FileTransformation plugin).
-/// Implements <see cref="IMiddleware"/> so ASP.NET resolves it from DI per request
-/// (the same pattern that worked in MissingMediaChecker's ScriptInjectionMiddleware).
+/// Injects the watchlist bookmark script tag into Jellyfin Web's index.html.
+///
+/// Strategies (in order):
+///   1. Direct — resolves index.html relative to WebRootPath and serves the
+///      modified file directly (works for standard on-premise Jellyfin installs).
+///   2. Buffer — captures the response body from the pipeline as a fallback.
+///
+/// Both strategies set Cache-Control: no-store so the injected page is never
+/// cached at CDN/proxy layers.
+///
+/// Pattern mirrors BORNIOS/JellyTrend's ScriptInjectionMiddleware.
 /// </summary>
 public sealed class BookmarkInjectionMiddleware : IMiddleware
 {
-    private const string Marker    = "data-plugin=\"watchlist\"";
-    private const string ScriptTag = "\n    <script data-plugin=\"watchlist\" src=\"/Watchlist/inject.js\" defer></script>";
+    private const string ScriptTag =
+        "\n    <script src=\"/Watchlist/watchlist.js\"></script>";
 
-    private readonly IWebHostEnvironment                   _env;
-    private readonly ILogger<BookmarkInjectionMiddleware>  _logger;
+    private const string Marker = "/Watchlist/watchlist.js";
 
-    public BookmarkInjectionMiddleware(
-        IWebHostEnvironment env,
-        ILogger<BookmarkInjectionMiddleware> logger)
+    private readonly IWebHostEnvironment                  _env;
+    private readonly ILogger<BookmarkInjectionMiddleware> _logger;
+
+    public BookmarkInjectionMiddleware(IWebHostEnvironment env, ILogger<BookmarkInjectionMiddleware> logger)
     {
         _env    = env;
         _logger = logger;
@@ -35,49 +39,32 @@ public sealed class BookmarkInjectionMiddleware : IMiddleware
     {
         if (!ShouldIntercept(context))
         {
-            await next(context).ConfigureAwait(false);
+            await next(context);
             return;
         }
-
-        _logger.LogDebug("Watchlist: intercepting index.html request at {Path}", context.Request.Path);
 
         var indexPath = ResolveIndexHtmlPath();
         if (indexPath is not null)
         {
-            _logger.LogDebug("Watchlist: serving patched index.html from {IndexPath}", indexPath);
-            await ServeDirectAsync(context, indexPath).ConfigureAwait(false);
+            await ServeDirectAsync(context, indexPath);
             return;
         }
 
-        _logger.LogDebug("Watchlist: index.html not found on disk; falling back to response buffering");
-        await ServeBufferedAsync(context, next).ConfigureAwait(false);
-    }
-
-    private static bool ShouldIntercept(HttpContext context)
-    {
-        if (!HttpMethods.IsGet(context.Request.Method)) return false;
-
-        var path = context.Request.Path.Value ?? string.Empty;
-        return path == "/"
-            || path.Equals("/index.html",      StringComparison.OrdinalIgnoreCase)
-            || path.Equals("/web/index.html",  StringComparison.OrdinalIgnoreCase)
-            || path.Equals("/web/",            StringComparison.OrdinalIgnoreCase)
-            || path.EndsWith("/index.html",    StringComparison.OrdinalIgnoreCase);
+        await ServeBufferedAsync(context, next);
     }
 
     private string? ResolveIndexHtmlPath()
     {
         var webRoot = _env.WebRootPath;
-        if (string.IsNullOrEmpty(webRoot) || !Directory.Exists(webRoot)) return null;
+        if (string.IsNullOrEmpty(webRoot)) return null;
 
         var baseDir = Directory.GetParent(webRoot)?.FullName;
-        if (baseDir is not null)
+        if (baseDir is null) return null;
+
+        foreach (var subdir in new[] { "jellyfin-web", "web" })
         {
-            foreach (var subdir in new[] { "jellyfin-web", "web" })
-            {
-                var candidate = Path.Combine(baseDir, subdir, "index.html");
-                if (File.Exists(candidate)) return candidate;
-            }
+            var candidate = Path.Combine(baseDir, subdir, "index.html");
+            if (File.Exists(candidate)) return candidate;
         }
 
         var direct = Path.Combine(webRoot, "index.html");
@@ -86,77 +73,77 @@ public sealed class BookmarkInjectionMiddleware : IMiddleware
 
     private async Task ServeDirectAsync(HttpContext context, string indexPath)
     {
-        try
-        {
-            var html = await File.ReadAllTextAsync(indexPath, context.RequestAborted).ConfigureAwait(false);
+        var html = await File.ReadAllTextAsync(indexPath);
 
-            if (!html.Contains(Marker, StringComparison.Ordinal)
-                && html.Contains("</body>", StringComparison.OrdinalIgnoreCase))
-            {
-                html = html.Replace("</body>", ScriptTag + "\n</body>", StringComparison.OrdinalIgnoreCase);
-            }
-
-            context.Response.ContentType = "text/html; charset=utf-8";
-            context.Response.Headers["Cache-Control"] = "no-store";
-            await context.Response.WriteAsync(html, context.RequestAborted).ConfigureAwait(false);
-        }
-        catch (Exception ex)
+        if (!html.Contains(Marker, StringComparison.Ordinal)
+            && html.Contains("</head>", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogWarning(ex, "Watchlist: direct index.html injection failed, falling back to buffered path");
-            // Let it fall through — caller will try buffered path next time or
-            // the response is already partially written; swallow the error gracefully.
+            html = html.Replace("</head>", ScriptTag + "\n</head>", StringComparison.OrdinalIgnoreCase);
+            _logger.LogInformation("Watchlist: script injected into '{P}'.", indexPath);
         }
+
+        var bytes = Encoding.UTF8.GetBytes(html);
+        context.Response.StatusCode    = 200;
+        context.Response.ContentType   = "text/html; charset=utf-8";
+        context.Response.Headers["Cache-Control"] = "no-store";
+        context.Response.ContentLength = bytes.Length;
+        await context.Response.Body.WriteAsync(bytes);
     }
 
     private async Task ServeBufferedAsync(HttpContext context, RequestDelegate next)
     {
-        var original = context.Response.Body;
+        var originalBody = context.Response.Body;
         using var buffer = new MemoryStream();
         context.Response.Body = buffer;
 
-        try
+        await next(context);
+
+        context.Response.Body = originalBody;
+        buffer.Seek(0, SeekOrigin.Begin);
+
+        var contentType = context.Response.ContentType ?? string.Empty;
+        var isHtml      = contentType.Contains("text/html", StringComparison.OrdinalIgnoreCase);
+
+        // If a downstream middleware (e.g. FileTransformation) already encoded the
+        // body, we cannot safely modify it — pass through untouched.
+        if (!isHtml || context.Response.Headers.ContainsKey("Content-Encoding"))
         {
-            await next(context).ConfigureAwait(false);
+            await buffer.CopyToAsync(originalBody);
+            return;
+        }
 
-            context.Response.Body = original;
-            buffer.Position = 0;
+        var html = await new StreamReader(buffer, Encoding.UTF8).ReadToEndAsync();
 
-            var ct       = context.Response.ContentType ?? string.Empty;
-            var encoding = context.Response.Headers.ContentEncoding.ToString();
+        if (html.Length == 0)
+        {
+            _logger.LogWarning("Watchlist: empty buffer — static-file middleware did not pass through the stream");
+            return;
+        }
 
-            if (!ct.Contains("text/html", StringComparison.OrdinalIgnoreCase))
-            {
-                await buffer.CopyToAsync(original, context.RequestAborted).ConfigureAwait(false);
-                return;
-            }
+        if (!html.Contains(Marker, StringComparison.Ordinal)
+            && html.Contains("</head>", StringComparison.OrdinalIgnoreCase))
+        {
+            html = html.Replace("</head>", ScriptTag + "\n</head>", StringComparison.OrdinalIgnoreCase);
+            _logger.LogInformation("Watchlist: script injected (buffer strategy).");
+        }
 
-            Stream readStream = encoding switch
-            {
-                var e when e.Contains("gzip",    StringComparison.OrdinalIgnoreCase) => new GZipStream(buffer,    CompressionMode.Decompress, leaveOpen: true),
-                var e when e.Contains("deflate", StringComparison.OrdinalIgnoreCase) => new DeflateStream(buffer, CompressionMode.Decompress, leaveOpen: true),
-                var e when e.Contains("br",      StringComparison.OrdinalIgnoreCase) => new BrotliStream(buffer,  CompressionMode.Decompress, leaveOpen: true),
-                _                                                                     => buffer
-            };
-
-            string html;
-            using (readStream)
-            using (var reader = new StreamReader(readStream, leaveOpen: false))
-                html = await reader.ReadToEndAsync(context.RequestAborted).ConfigureAwait(false);
-
-            if (!html.Contains(Marker, StringComparison.Ordinal)
-                && html.Contains("</body>", StringComparison.OrdinalIgnoreCase))
-            {
-                html = html.Replace("</body>", ScriptTag + "\n</body>", StringComparison.OrdinalIgnoreCase);
-            }
-
-            context.Response.Headers.Remove("Content-Encoding");
+        var bytes = Encoding.UTF8.GetBytes(html);
+        if (!context.Response.HasStarted)
+        {
             context.Response.Headers["Cache-Control"] = "no-store";
-            context.Response.ContentLength = null;
-            await context.Response.WriteAsync(html, context.RequestAborted).ConfigureAwait(false);
+            context.Response.ContentLength            = bytes.Length;
         }
-        finally
-        {
-            context.Response.Body = original;
-        }
+
+        await originalBody.WriteAsync(bytes);
+    }
+
+    private static bool ShouldIntercept(HttpContext context)
+    {
+        if (!HttpMethods.IsGet(context.Request.Method)) return false;
+
+        var path = context.Request.Path.Value ?? string.Empty;
+        return path.Equals("/web/index.html", StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/web/",           StringComparison.OrdinalIgnoreCase)
+            || path.Equals("/",               StringComparison.OrdinalIgnoreCase);
     }
 }
