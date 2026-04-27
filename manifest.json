@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.1.0",
+        "changelog": "Fix bookmark icon injection: switch BookmarkInjectionMiddleware to IMiddleware pattern (DI-resolved per request) and add direct-from-disk primary path. Script now served via /Watchlist/inject.js.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.1.0/watchlist_1.0.1.0.zip",
+        "checksum": "e0b00670351bde7dd07833ef7c338644",
+        "timestamp": "2026-04-26T14:00:00Z"
+      },
+      {
         "version": "1.0.0.0",
         "changelog": "Initial release.",
         "targetAbi": "10.11.0.0",
