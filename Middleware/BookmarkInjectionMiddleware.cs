@@ -17,8 +17,8 @@ namespace Jellyfin.Plugin.Watchlist.Middleware;
 /// </summary>
 public sealed class BookmarkInjectionMiddleware : IMiddleware
 {
-    private const string Marker    = "btnWatchlistToggle";
-    private const string ScriptTag = "\n    <script src=\"/Watchlist/inject.js\" defer></script>";
+    private const string Marker    = "data-plugin=\"watchlist\"";
+    private const string ScriptTag = "\n    <script data-plugin=\"watchlist\" src=\"/Watchlist/inject.js\" defer></script>";
 
     private readonly IWebHostEnvironment                   _env;
     private readonly ILogger<BookmarkInjectionMiddleware>  _logger;
@@ -39,13 +39,17 @@ public sealed class BookmarkInjectionMiddleware : IMiddleware
             return;
         }
 
+        _logger.LogDebug("Watchlist: intercepting index.html request at {Path}", context.Request.Path);
+
         var indexPath = ResolveIndexHtmlPath();
         if (indexPath is not null)
         {
+            _logger.LogDebug("Watchlist: serving patched index.html from {IndexPath}", indexPath);
             await ServeDirectAsync(context, indexPath).ConfigureAwait(false);
             return;
         }
 
+        _logger.LogDebug("Watchlist: index.html not found on disk; falling back to response buffering");
         await ServeBufferedAsync(context, next).ConfigureAwait(false);
     }
 
@@ -57,7 +61,8 @@ public sealed class BookmarkInjectionMiddleware : IMiddleware
         return path == "/"
             || path.Equals("/index.html",      StringComparison.OrdinalIgnoreCase)
             || path.Equals("/web/index.html",  StringComparison.OrdinalIgnoreCase)
-            || path.Equals("/web/",            StringComparison.OrdinalIgnoreCase);
+            || path.Equals("/web/",            StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith("/index.html",    StringComparison.OrdinalIgnoreCase);
     }
 
     private string? ResolveIndexHtmlPath()

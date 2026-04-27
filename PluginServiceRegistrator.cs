@@ -21,5 +21,6 @@ public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
         services.AddScoped<IEventConsumer<UserDataSaveEventArgs>, WatchlistEventConsumer>();
         services.AddTransient<BookmarkInjectionMiddleware>();
         services.AddTransient<IStartupFilter, BookmarkMiddlewareStartupFilter>();
+        services.AddHostedService<IndexHtmlPatcher>();
     }
 }

@@ -1,7 +1,7 @@
 ---
 name: "Watchlist"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version: "1.0.1.0"
+version: "1.0.2.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -15,7 +15,7 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.Watchlist.dll"
 changelog: |-
-  Fix bookmark icon injection: switch BookmarkInjectionMiddleware to IMiddleware
-  pattern (DI-resolved per request) and add direct-from-disk primary path, matching
-  the approach that worked in MissingMediaChecker's ScriptInjectionMiddleware.
-  Script is now served via /Watchlist/inject.js endpoint rather than inlined.
+  Add IndexHtmlPatcher: IHostedService that directly patches index.html on disk at
+  startup, bypassing ASP.NET pipeline ordering issues. Expand middleware path matching
+  to catch any path ending in index.html. Add debug logging to confirm which injection
+  path fires.

@@ -38,6 +38,14 @@
             (the same pattern that worked in MissingMediaChecker's ScriptInjectionMiddleware).
             </summary>
         </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Middleware.IndexHtmlPatcher">
+            <summary>
+            Patches Jellyfin Web's index.html on disk at startup to inject the watchlist
+            bookmark script tag. Runs independently of ASP.NET middleware pipeline ordering,
+            so it works even if IStartupFilter registration is unreliable in Jellyfin's
+            plugin loading sequence.
+            </summary>
+        </member>
         <member name="P:Jellyfin.Plugin.Watchlist.Models.WatchlistStore.Entries">
             <summary>userId (Guid.ToString("N")) → ordered list of watchlist entries.</summary>
         </member>
