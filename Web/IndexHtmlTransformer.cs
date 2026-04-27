@@ -1,14 +1,16 @@
 // Web/IndexHtmlTransformer.cs
+using Microsoft.Extensions.Logging;
+
 namespace Jellyfin.Plugin.Watchlist.Web;
 
 /// <summary>
 /// Callback invoked by IAmParadox27's File Transformation plugin.
-/// Receives index.html contents, returns the modified HTML with our
-/// bookmark script tag injected before &lt;/body&gt;.
+/// Receives index.html contents, returns the modified HTML with our bookmark
+/// script tag injected before &lt;/body&gt;.
 ///
-/// Must be static (FileTransformation invokes via reflection on null instance)
-/// and take exactly one parameter that File Transformation can deserialise from
-/// the {"contents":"..."} JObject it constructs.
+/// Must be static (FileTransformation invokes via reflection) and take exactly
+/// one parameter FileTransformation can deserialise from the {"contents":"..."}
+/// JObject it constructs.
 /// </summary>
 public static class IndexHtmlTransformer
 {
@@ -18,42 +20,51 @@ public static class IndexHtmlTransformer
         public string Contents { get; set; } = string.Empty;
     }
 
-    private const string Marker    = "/Watchlist/watchlist.js";
-    private const string ScriptTag = "    <script src=\"/Watchlist/watchlist.js?v=1.0.6.0\" defer></script>\n";
+    private const string Marker    = "watchlist-plugin-marker";
+    private const string Injection =
+        "    <meta name=\"watchlist-plugin-marker\" content=\"1.0.7.0\">\n" +
+        "    <script src=\"/Watchlist/watchlist.js?v=1.0.7.0\" defer></script>\n";
 
     private static int _invocationCount;
+    private static ILogger? _logger;
 
-    /// <summary>Number of times File Transformation has invoked our callback (diagnostic).</summary>
+    /// <summary>Number of times File Transformation has invoked our callback.</summary>
     public static int InvocationCount => _invocationCount;
+
+    /// <summary>Hooked up at startup by FileTransformationRegistrar so we can log via Jellyfin's logger.</summary>
+    public static void SetLogger(ILogger logger) => _logger = logger;
 
     /// <summary>
     /// File Transformation entry point. Returns the (possibly) modified HTML.
     /// </summary>
     public static string Transform(Payload payload)
     {
-        var n = System.Threading.Interlocked.Increment(ref _invocationCount);
+        var n    = System.Threading.Interlocked.Increment(ref _invocationCount);
         var html = payload?.Contents ?? string.Empty;
-        // Console.WriteLine surfaces in Jellyfin's stdout-captured log.
-        System.Console.WriteLine(
-            $"[Watchlist] IndexHtmlTransformer.Transform invoked (call #{n}, contents length={html.Length})");
+
+        _logger?.LogInformation(
+            "Watchlist: IndexHtmlTransformer.Transform invoked (call #{Count}, contents length={Length})",
+            n, html.Length);
 
         if (string.IsNullOrEmpty(html)) return html;
 
-        // Idempotent: skip if already injected.
+        // Idempotent: skip if already injected (works even if File Transformation
+        // calls our callback multiple times for the same response).
         if (html.Contains(Marker, System.StringComparison.Ordinal)) return html;
 
-        // Inject before </body> — matches what other IAmParadox27 plugins do.
         if (html.Contains("</body>", System.StringComparison.OrdinalIgnoreCase))
         {
-            return html.Replace("</body>", ScriptTag + "</body>", System.StringComparison.OrdinalIgnoreCase);
+            _logger?.LogInformation("Watchlist: injected script + meta tag before </body> (call #{Count})", n);
+            return html.Replace("</body>", Injection + "</body>", System.StringComparison.OrdinalIgnoreCase);
         }
 
-        // Fallback: try </head>
         if (html.Contains("</head>", System.StringComparison.OrdinalIgnoreCase))
         {
-            return html.Replace("</head>", ScriptTag + "</head>", System.StringComparison.OrdinalIgnoreCase);
+            _logger?.LogInformation("Watchlist: injected script + meta tag before </head> (call #{Count})", n);
+            return html.Replace("</head>", Injection + "</head>", System.StringComparison.OrdinalIgnoreCase);
         }
 
+        _logger?.LogWarning("Watchlist: index.html had no </body> or </head> — could not inject");
         return html;
     }
 }

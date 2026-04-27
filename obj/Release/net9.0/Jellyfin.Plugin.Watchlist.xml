@@ -78,19 +78,22 @@
         <member name="T:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer">
              <summary>
              Callback invoked by IAmParadox27's File Transformation plugin.
-             Receives index.html contents, returns the modified HTML with our
-             bookmark script tag injected before &lt;/body&gt;.
+             Receives index.html contents, returns the modified HTML with our bookmark
+             script tag injected before &lt;/body&gt;.
             
-             Must be static (FileTransformation invokes via reflection on null instance)
-             and take exactly one parameter that File Transformation can deserialise from
-             the {"contents":"..."} JObject it constructs.
+             Must be static (FileTransformation invokes via reflection) and take exactly
+             one parameter FileTransformation can deserialise from the {"contents":"..."}
+             JObject it constructs.
              </summary>
         </member>
         <member name="P:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload.Contents">
             <summary>Current file contents.</summary>
         </member>
         <member name="P:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.InvocationCount">
-            <summary>Number of times File Transformation has invoked our callback (diagnostic).</summary>
+            <summary>Number of times File Transformation has invoked our callback.</summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.SetLogger(Microsoft.Extensions.Logging.ILogger)">
+            <summary>Hooked up at startup by FileTransformationRegistrar so we can log via Jellyfin's logger.</summary>
         </member>
         <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Transform(Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload)">
             <summary>

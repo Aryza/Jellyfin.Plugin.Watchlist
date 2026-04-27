@@ -28,6 +28,10 @@ public sealed class FileTransformationRegistrar : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        // Cache the logger inside the static transformer so its callback can log
+        // through Jellyfin's logger (Console.WriteLine doesn't reach the log file).
+        IndexHtmlTransformer.SetLogger(_logger);
+
         try
         {
             var ftAssembly = AssemblyLoadContext.All
