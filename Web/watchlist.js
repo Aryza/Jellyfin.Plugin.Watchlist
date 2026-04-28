@@ -2,19 +2,23 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.10.0');
+    console.log(TAG, 'script loaded, version 1.0.11.0');
 
-    function token() {
-        try {
-            return window.ApiClient && window.ApiClient.accessToken
-                ? window.ApiClient.accessToken()
-                : null;
-        } catch (_) { return null; }
+    function apiClient() {
+        return window.ApiClient || null;
     }
 
-    function authHeaders() {
-        var t = token();
-        return t ? { 'Authorization': 'MediaBrowser Token=' + t } : {};
+    // Use Jellyfin's ApiClient.ajax which sets the full X-Emby-Authorization
+    // header (Client, Device, DeviceId, Version, Token). Raw fetch with just
+    // Authorization: MediaBrowser Token=... is rejected as 401 in 10.11.
+    function jfAjax(method, path, dataType) {
+        var c = apiClient();
+        if (!c) return Promise.reject(new Error('ApiClient unavailable'));
+        return c.ajax({
+            type: method,
+            url: c.getUrl(path),
+            dataType: dataType || (method === 'GET' ? 'json' : undefined)
+        });
     }
 
     // Try every known way to extract the current item id from the URL.
@@ -152,16 +156,11 @@
         var btn = makeButton(favBtn);
 
         try {
-            var resp = await fetch('/Watchlist/Status/' + itemId, { headers: authHeaders() });
-            if (!resp.ok) {
-                console.warn(TAG, 'Status fetch failed:', resp.status, resp.statusText);
-                return;
-            }
-            var data = await resp.json();
-            buttonStateFor(itemId, data.inWatchlist);
-            applyButtonState(btn, data.inWatchlist);
+            var data = await jfAjax('GET', 'Watchlist/Status/' + itemId);
+            buttonStateFor(itemId, !!data.inWatchlist);
+            applyButtonState(btn, !!data.inWatchlist);
         } catch (e) {
-            console.warn(TAG, 'Status fetch error', e);
+            console.warn(TAG, 'Status fetch failed', e && e.status, e);
             return;
         }
 
@@ -172,18 +171,11 @@
             var current = btn.getAttribute('data-watchlist-state') === '1';
             var method = current ? 'DELETE' : 'POST';
             try {
-                var r = await fetch('/Watchlist/Items/' + itemId, {
-                    method: method,
-                    headers: authHeaders()
-                });
-                if (r.ok) {
-                    applyButtonState(btn, !current);
-                    console.log(TAG, method, 'OK for', itemId);
-                } else {
-                    console.warn(TAG, method, 'failed:', r.status, await r.text());
-                }
+                await jfAjax(method, 'Watchlist/Items/' + itemId);
+                applyButtonState(btn, !current);
+                console.log(TAG, method, 'OK for', itemId);
             } catch (e) {
-                console.warn(TAG, 'toggle error', e);
+                console.warn(TAG, method, 'failed', e && e.status, e);
             }
         });
 

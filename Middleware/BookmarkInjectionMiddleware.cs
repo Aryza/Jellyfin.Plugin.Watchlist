@@ -22,7 +22,7 @@ namespace Jellyfin.Plugin.Watchlist.Middleware;
 public sealed class BookmarkInjectionMiddleware : IMiddleware
 {
     private const string ScriptTag =
-        "\n    <script src=\"/Watchlist/watchlist.js?v=1.0.10.0\" defer></script>";
+        "\n    <script src=\"/Watchlist/watchlist.js?v=1.0.11.0\" defer></script>";
 
     private const string Marker = "/Watchlist/watchlist.js";
 
