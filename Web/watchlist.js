@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.15.0');
+    console.log(TAG, 'script loaded, version 1.0.16.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -37,8 +37,9 @@
 
         var url = typeof c.getUrl === 'function' ? c.getUrl(path) : path;
 
-        var authHeader = [
-            'MediaBrowser',
+        // Format: "MediaBrowser Client="...", Device="...", ..."
+        // NOTE: space (not comma) between "MediaBrowser" and the first key=value pair.
+        var authHeader = 'MediaBrowser ' + [
             'Client="'  + (typeof c.appName            === 'function' ? c.appName()            : 'Jellyfin Web') + '"',
             'Device="'  + (typeof c.deviceName         === 'function' ? c.deviceName()         : 'Browser')      + '"',
             'DeviceId="'+ (typeof c.deviceId           === 'function' ? c.deviceId()           : 'unknown')      + '"',
