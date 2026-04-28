@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.9.0');
+    console.log(TAG, 'script loaded, version 1.0.10.0');
 
     function token() {
         try {
@@ -55,15 +55,19 @@
     }
 
     // Selectors for the favorite/heart button across Jellyfin web versions.
-    // Jellyfin 10.11 uses `<button class="btnUserData ..." data-method="markFavorite">`
-    // (see jellyfin-web src/components/userdatabuttons/userdatabuttons.js).
+    // 10.11 detail pages render <button is="emby-ratingbutton" class="...
+    // btnUserRating detailButton emby-button" data-isfavorite="false">
+    // wrapping a <div class="detailButton-content"><span class="material-icons
+    // detailButton-icon favorite">.
     var FAV_SELECTORS = [
-        'button.btnUserData[data-method="markFavorite"]',  // 10.11
-        'button[data-method="markFavorite"]',              // 10.11 fallback (no btnUserData class)
+        'button.btnUserRating',                            // 10.11 detail page
+        'button[is="emby-ratingbutton"]',                  // 10.11 fallback
+        'button[data-isfavorite]',                         // 10.11 attribute
+        'button.btnUserData[data-method="markFavorite"]',  // userdatabuttons component
+        'button[data-method="markFavorite"]',
         '.btnUserDataFavorite',
         '.btnFavorite',                                    // legacy
         'button[data-action="favorite"]',
-        '.detailButton[data-action="favorite"]',
         'button[title*="avorite" i]'
     ];
 
@@ -92,16 +96,37 @@
 
     function makeButton(refBtn) {
         var btn = document.createElement('button');
-        // Match the reference button's class so styling/sizing line up with the
-        // native userdata button next to it. Strip any 'btnUserDataOn' active state.
-        var refClass = (refBtn && refBtn.className ? refBtn.className : 'paper-icon-button-light autoSize');
-        refClass = refClass.replace(/\bbtnUserDataOn\b/g, '').trim();
-        btn.className = refClass + ' btnWatchlistToggle';
         btn.type = 'button';
-        // Match the reference's icon span so size/alignment match.
-        var refIcon = refBtn ? refBtn.querySelector('span.material-icons') : null;
-        var iconCls = refIcon ? refIcon.className.replace(/\b(check|favorite|heart)\b/g, '').trim() : 'material-icons';
-        btn.innerHTML = '<span class="' + iconCls + ' bookmark" aria-hidden="true"></span>';
+
+        // Inherit class list from the favorite button so sizing/spacing matches.
+        // Strip plugin-specific state classes.
+        var refClass = (refBtn && refBtn.className) ? refBtn.className : 'paper-icon-button-light autoSize';
+        refClass = refClass.replace(/\b(btnUserDataOn|btnUserRating|btnUserData)\b/g, '').replace(/\s+/g, ' ').trim();
+        btn.className = refClass + ' btnWatchlistToggle';
+
+        // 10.11 detail buttons wrap their icon in <div class="detailButton-content">
+        // <span class="material-icons detailButton-icon favorite">. Mirror the
+        // structure so layout matches; otherwise drop a plain icon span.
+        var refContent = refBtn ? refBtn.querySelector('.detailButton-content') : null;
+        var refIcon    = refBtn ? refBtn.querySelector('span.material-icons')    : null;
+
+        if (refContent && refIcon) {
+            var content = document.createElement('div');
+            content.className = refContent.className;
+            var icon = document.createElement('span');
+            // Keep all of the icon's modifier classes EXCEPT the foreground glyph
+            // ones (favorite/check/heart) — replace with bookmark.
+            icon.className = refIcon.className.replace(/\b(favorite|check|heart)\b/g, '').replace(/\s+/g, ' ').trim() + ' bookmark';
+            icon.setAttribute('aria-hidden', 'true');
+            content.appendChild(icon);
+            btn.appendChild(content);
+        } else {
+            var iconCls = refIcon
+                ? refIcon.className.replace(/\b(favorite|check|heart)\b/g, '').replace(/\s+/g, ' ').trim()
+                : 'material-icons md-18';
+            btn.innerHTML = '<span class="' + iconCls + ' bookmark" aria-hidden="true"></span>';
+        }
+
         btn.style.cssText = 'cursor:pointer;';
         return btn;
     }

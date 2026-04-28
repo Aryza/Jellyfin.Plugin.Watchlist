@@ -1,7 +1,7 @@
 ---
 name: "Watchlist"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version: "1.0.9.0"
+version: "1.0.10.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -15,9 +15,8 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.Watchlist.dll"
 changelog: |-
-  Bookmark icons render at last. Jellyfin 10.11 web UI uses
-  <button class="btnUserData ..." data-method="markFavorite"> for the favorite
-  button (jellyfin-web src/components/userdatabuttons/userdatabuttons.js); old
-  selectors (.btnFavorite, .btnUserDataFavorite, [data-action=favorite]) don't
-  match. Add 10.11 selector to FAV_SELECTORS list. Inherit className/icon span
-  from the favorite button so the bookmark sizes and aligns with it natively.
+  10.11 detail-page favorite button uses <button is="emby-ratingbutton"
+  class="btnUserRating detailButton ...">, not the userdatabuttons component
+  selector from v1.0.9.0. Add btnUserRating + emby-ratingbutton + data-isfavorite
+  selectors. Mirror the detailButton-content/icon-span wrapper so the bookmark
+  matches the native button's layout exactly.
