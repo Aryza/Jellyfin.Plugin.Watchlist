@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.14.0",
+        "changelog": "Use [Authorize(Policy = \"FirstTimeSetupOrDefault\")]. v1.0.12.0's \"DefaultAuthorization\" doesn't exist in 10.11; caused 500 InvalidOperationException. FirstTimeSetupOrDefault is the policy Jellyfin's own normal-user controllers (LibraryController, LocalizationController) use. Drop [ResponseCache] from inject.js endpoint.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.14.0/watchlist_1.0.14.0.zip",
+        "checksum": "2cfec9075e15bab45ba1c6b3f1021c0a",
+        "timestamp": "2026-04-28T16:00:00Z"
+      },
+      {
         "version": "1.0.12.0",
         "changelog": "Switch controller [Authorize] -> [Authorize(Policy = \"DefaultAuthorization\")]. Bare [Authorize] picks Jellyfin's fallback policy that rejects normal users with 401; DefaultAuthorization admits any authenticated user.",
         "targetAbi": "10.11.0.0",
