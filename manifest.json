@@ -13,7 +13,7 @@
         "changelog": "Fix X-Emby-Authorization header format. v1.0.15.0 joined \"MediaBrowser\" into the array with .join(\", \") producing \"MediaBrowser, Client=...\" but Jellyfin requires \"MediaBrowser Client=...\" (space not comma). CustomAuthenticationHandler rejected the malformed header with 401.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.16.0/watchlist_1.0.16.0.zip",
-        "checksum": "2d58b1a87f4477775d78a4da08d6c41f",
+        "checksum": "9b00ddea7148dd468d6a71e001d9e983",
         "timestamp": "2026-04-28T18:00:00Z"
       },
       {
