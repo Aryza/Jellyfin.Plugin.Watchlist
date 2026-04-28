@@ -11,7 +11,7 @@ namespace Jellyfin.Plugin.Watchlist.Api;
 
 [ApiController]
 [Route("Watchlist")]
-[Authorize(Policy = "FirstTimeSetupOrDefault")]
+[Authorize(AuthenticationSchemes = "CustomAuthentication")]
 public class WatchlistController : ControllerBase
 {
     private readonly WatchlistService               _watchlist;

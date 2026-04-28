@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.15.0",
+        "changelog": "Replace ApiClient.ajax with native fetch + explicit X-Emby-Authorization header. ApiClient.ajax's _serverInfo.AccessToken was null in this 10.11 environment, silently producing 401. Now extract token directly (accessToken() -> _serverInfo -> currentUser) and build full header. Switch controller to [Authorize(AuthenticationSchemes=\"CustomAuthentication\")] to match what Jellyfin's auth scheme is actually registered as.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.15.0/watchlist_1.0.15.0.zip",
+        "checksum": "b2e94f72ebf6f56674500869cf6e7d60",
+        "timestamp": "2026-04-28T17:00:00Z"
+      },
+      {
         "version": "1.0.14.0",
         "changelog": "Use [Authorize(Policy = \"FirstTimeSetupOrDefault\")]. v1.0.12.0's \"DefaultAuthorization\" doesn't exist in 10.11; caused 500 InvalidOperationException. FirstTimeSetupOrDefault is the policy Jellyfin's own normal-user controllers (LibraryController, LocalizationController) use. Drop [ResponseCache] from inject.js endpoint.",
         "targetAbi": "10.11.0.0",

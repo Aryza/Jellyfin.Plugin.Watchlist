@@ -2,23 +2,63 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.14.0');
+    console.log(TAG, 'script loaded, version 1.0.15.0');
 
     function apiClient() {
         return window.ApiClient || null;
     }
 
-    // Use Jellyfin's ApiClient.ajax which sets the full X-Emby-Authorization
-    // header (Client, Device, DeviceId, Version, Token). Raw fetch with just
-    // Authorization: MediaBrowser Token=... is rejected as 401 in 10.11.
-    function jfAjax(method, path, dataType) {
+    // Extract access token from ApiClient regardless of which internal field
+    // jellyfin-apiclient uses in the running web version.
+    function getToken(c) {
+        try {
+            if (typeof c.accessToken === 'function') {
+                var t = c.accessToken();
+                if (t) return t;
+            }
+            if (c._serverInfo && c._serverInfo.AccessToken) return c._serverInfo.AccessToken;
+            if (c.currentUser  && c.currentUser.AccessToken)  return c.currentUser.AccessToken;
+        } catch (e) { /* best effort */ }
+        return null;
+    }
+
+    // Explicit native fetch with full X-Emby-Authorization header.
+    // ApiClient.ajax exists but its internal _serverInfo.AccessToken has been
+    // observed as null in some 10.11 environments, producing 401 silently.
+    async function jfAjax(method, path) {
         var c = apiClient();
         if (!c) return Promise.reject(new Error('ApiClient unavailable'));
-        return c.ajax({
-            type: method,
-            url: c.getUrl(path),
-            dataType: dataType || (method === 'GET' ? 'json' : undefined)
+
+        var token = getToken(c);
+        console.log(TAG, 'jfAjax', method, path,
+            'token:', token ? token.slice(0, 8) + '...' : 'NULL — will 401');
+
+        if (!token) return Promise.reject(Object.assign(new Error('No access token'), { status: 0 }));
+
+        var url = typeof c.getUrl === 'function' ? c.getUrl(path) : path;
+
+        var authHeader = [
+            'MediaBrowser',
+            'Client="'  + (typeof c.appName            === 'function' ? c.appName()            : 'Jellyfin Web') + '"',
+            'Device="'  + (typeof c.deviceName         === 'function' ? c.deviceName()         : 'Browser')      + '"',
+            'DeviceId="'+ (typeof c.deviceId           === 'function' ? c.deviceId()           : 'unknown')      + '"',
+            'Version="' + (typeof c.applicationVersion === 'function' ? c.applicationVersion() : '1.0.0')        + '"',
+            'Token="'   + token + '"'
+        ].join(', ');
+
+        var resp = await window.fetch(url, {
+            method:  method,
+            headers: { 'X-Emby-Authorization': authHeader }
         });
+
+        if (!resp.ok) {
+            var err = new Error('HTTP ' + resp.status);
+            err.status = resp.status;
+            throw err;
+        }
+
+        if (method === 'GET') return resp.json();
+        return null;
     }
 
     // Try every known way to extract the current item id from the URL.
