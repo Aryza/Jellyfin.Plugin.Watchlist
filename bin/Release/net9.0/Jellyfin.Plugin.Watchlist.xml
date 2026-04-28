@@ -95,6 +95,9 @@
         <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.SetLogger(Microsoft.Extensions.Logging.ILogger)">
             <summary>Hooked up at startup by FileTransformationRegistrar so we can log via Jellyfin's logger.</summary>
         </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.SetDiagFile(System.String)">
+            <summary>Set at startup to a writeable path; Transform appends to it on every call.</summary>
+        </member>
         <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Transform(Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload)">
             <summary>
             File Transformation entry point. Returns the (possibly) modified HTML.

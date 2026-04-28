@@ -8,7 +8,7 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.0.8.0</Version>
+    <Version>1.0.9.0</Version>
     <JellyfinVersion>10.11.*</JellyfinVersion>
   </PropertyGroup>
 

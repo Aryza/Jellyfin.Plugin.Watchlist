@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.4.0');
+    console.log(TAG, 'script loaded, version 1.0.9.0');
 
     function token() {
         try {
@@ -55,13 +55,15 @@
     }
 
     // Selectors for the favorite/heart button across Jellyfin web versions.
+    // Jellyfin 10.11 uses `<button class="btnUserData ..." data-method="markFavorite">`
+    // (see jellyfin-web src/components/userdatabuttons/userdatabuttons.js).
     var FAV_SELECTORS = [
-        '.btnUserDataFavorite',         // newer
-        '.btnFavorite',                 // legacy
+        'button.btnUserData[data-method="markFavorite"]',  // 10.11
+        'button[data-method="markFavorite"]',              // 10.11 fallback (no btnUserData class)
+        '.btnUserDataFavorite',
+        '.btnFavorite',                                    // legacy
         'button[data-action="favorite"]',
-        'button[is="emby-button"][data-action="favorite"]',
         '.detailButton[data-action="favorite"]',
-        '[data-favorite] button',
         'button[title*="avorite" i]'
     ];
 
@@ -90,11 +92,16 @@
 
     function makeButton(refBtn) {
         var btn = document.createElement('button');
-        // Copy class from the reference button so styling matches its environment.
-        btn.className = (refBtn && refBtn.className ? refBtn.className : 'paper-icon-button-light')
-            + ' btnWatchlistToggle';
+        // Match the reference button's class so styling/sizing line up with the
+        // native userdata button next to it. Strip any 'btnUserDataOn' active state.
+        var refClass = (refBtn && refBtn.className ? refBtn.className : 'paper-icon-button-light autoSize');
+        refClass = refClass.replace(/\bbtnUserDataOn\b/g, '').trim();
+        btn.className = refClass + ' btnWatchlistToggle';
         btn.type = 'button';
-        btn.innerHTML = '<span class="material-icons md-18" aria-hidden="true">bookmark</span>';
+        // Match the reference's icon span so size/alignment match.
+        var refIcon = refBtn ? refBtn.querySelector('span.material-icons') : null;
+        var iconCls = refIcon ? refIcon.className.replace(/\b(check|favorite|heart)\b/g, '').trim() : 'material-icons';
+        btn.innerHTML = '<span class="' + iconCls + ' bookmark" aria-hidden="true"></span>';
         btn.style.cssText = 'cursor:pointer;';
         return btn;
     }

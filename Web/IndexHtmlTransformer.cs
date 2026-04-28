@@ -22,17 +22,21 @@ public static class IndexHtmlTransformer
 
     private const string Marker    = "watchlist-plugin-marker";
     private const string Injection =
-        "    <meta name=\"watchlist-plugin-marker\" content=\"1.0.7.0\">\n" +
-        "    <script src=\"/Watchlist/watchlist.js?v=1.0.7.0\" defer></script>\n";
+        "    <meta name=\"watchlist-plugin-marker\" content=\"1.0.9.0\">\n" +
+        "    <script src=\"/Watchlist/watchlist.js?v=1.0.9.0\" defer></script>\n";
 
-    private static int _invocationCount;
+    private static int     _invocationCount;
     private static ILogger? _logger;
+    private static string? _diagFilePath;
 
     /// <summary>Number of times File Transformation has invoked our callback.</summary>
     public static int InvocationCount => _invocationCount;
 
     /// <summary>Hooked up at startup by FileTransformationRegistrar so we can log via Jellyfin's logger.</summary>
     public static void SetLogger(ILogger logger) => _logger = logger;
+
+    /// <summary>Set at startup to a writeable path; Transform appends to it on every call.</summary>
+    public static void SetDiagFile(string path) => _diagFilePath = path;
 
     /// <summary>
     /// File Transformation entry point. Returns the (possibly) modified HTML.
@@ -41,6 +45,17 @@ public static class IndexHtmlTransformer
     {
         var n    = System.Threading.Interlocked.Increment(ref _invocationCount);
         var html = payload?.Contents ?? string.Empty;
+
+        // File-based proof of invocation (bypasses logger configuration entirely).
+        if (_diagFilePath is not null)
+        {
+            try
+            {
+                System.IO.File.AppendAllText(_diagFilePath,
+                    $"{System.DateTime.UtcNow:o}\tcall #{n}\tlength={html.Length}\n");
+            }
+            catch { /* best effort */ }
+        }
 
         _logger?.LogInformation(
             "Watchlist: IndexHtmlTransformer.Transform invoked (call #{Count}, contents length={Length})",

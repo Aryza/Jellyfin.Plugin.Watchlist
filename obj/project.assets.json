@@ -1643,7 +1643,7 @@
     "/Users/ary/.nuget/packages/": {}
   },
   "project": {
-    "version": "1.0.8",
+    "version": "1.0.9",
     "restore": {
       "projectUniqueName": "/Users/ary/Documents/coding/Jellyfin.Plugin.Watchlist/Jellyfin.Plugin.Watchlist.csproj",
       "projectName": "Jellyfin.Plugin.Watchlist",

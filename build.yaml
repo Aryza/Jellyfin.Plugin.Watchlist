@@ -1,7 +1,7 @@
 ---
 name: "Watchlist"
 guid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version: "1.0.8.0"
+version: "1.0.9.0"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "Ary"
@@ -15,9 +15,9 @@ description: >-
 artifacts:
   - "Jellyfin.Plugin.Watchlist.dll"
 changelog: |-
-  Fix bookmark icon injection. FileTransformation keys callback pipelines by
-  exact pattern string with a direct dict-lookup taking priority over regex
-  fallback. Other IAmParadox27 plugins register under the literal pattern
-  "index.html"; we were registering under "index\.html" which produced a
-  separate (unreachable) pipeline. Switch to "index.html" so our callback
-  joins the same pipeline that actually runs.
+  Bookmark icons render at last. Jellyfin 10.11 web UI uses
+  <button class="btnUserData ..." data-method="markFavorite"> for the favorite
+  button (jellyfin-web src/components/userdatabuttons/userdatabuttons.js); old
+  selectors (.btnFavorite, .btnUserDataFavorite, [data-action=favorite]) don't
+  match. Add 10.11 selector to FAV_SELECTORS list. Inherit className/icon span
+  from the favorite button so the bookmark sizes and aligns with it natively.
