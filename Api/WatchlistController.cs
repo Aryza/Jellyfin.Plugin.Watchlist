@@ -11,7 +11,7 @@ namespace Jellyfin.Plugin.Watchlist.Api;
 
 [ApiController]
 [Route("Watchlist")]
-[Authorize(Policy = "DefaultAuthorization")]
+[Authorize(Policy = "FirstTimeSetupOrDefault")]
 public class WatchlistController : ControllerBase
 {
     private readonly WatchlistService               _watchlist;
@@ -93,7 +93,6 @@ public class WatchlistController : ControllerBase
     // <script src="/Watchlist/watchlist.js"> tag in index.html.
     [HttpGet("watchlist.js")]
     [AllowAnonymous]
-    [ResponseCache(Duration = 3600)]
     public IActionResult GetScript()
     {
         const string resourceName = "Jellyfin.Plugin.Watchlist.Web.watchlist.js";
