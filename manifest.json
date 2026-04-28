@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.12.0",
+        "changelog": "Switch controller [Authorize] -> [Authorize(Policy = \"DefaultAuthorization\")]. Bare [Authorize] picks Jellyfin's fallback policy that rejects normal users with 401; DefaultAuthorization admits any authenticated user.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.12.0/watchlist_1.0.12.0.zip",
+        "checksum": "18ec4c26ede547a75e6cc7d2afb607da",
+        "timestamp": "2026-04-28T15:00:00Z"
+      },
+      {
         "version": "1.0.11.0",
         "changelog": "Use ApiClient.ajax for Watchlist API calls. Raw fetch with Authorization: MediaBrowser Token=... was rejected as 401 on Jellyfin 10.11; ApiClient.ajax constructs the full X-Emby-Authorization header (Client, Device, DeviceId, Version, Token) the server expects.",
         "targetAbi": "10.11.0.0",
