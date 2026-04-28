@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.11.0');
+    console.log(TAG, 'script loaded, version 1.0.12.0');
 
     function apiClient() {
         return window.ApiClient || null;
