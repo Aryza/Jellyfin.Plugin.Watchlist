@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.10.0",
+        "changelog": "Match Jellyfin 10.11 detail-page favorite button: button.btnUserRating / is=\"emby-ratingbutton\". Mirror the detailButton-content wrapper structure so the bookmark button matches the native layout exactly.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.10.0/watchlist_1.0.10.0.zip",
+        "checksum": "9d68e84161ffe52894fe701d7be8ea0b",
+        "timestamp": "2026-04-28T13:00:00Z"
+      },
+      {
         "version": "1.0.9.0",
         "changelog": "Bookmark icons now render. Add Jellyfin 10.11 favorite-button selector (button.btnUserData[data-method=markFavorite]). Inherit className and icon span from the native favorite button so the bookmark sizes/aligns natively. Cache-bust script src and meta marker to v1.0.9.0.",
         "targetAbi": "10.11.0.0",
