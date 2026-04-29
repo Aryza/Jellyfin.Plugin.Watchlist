@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.28.0",
+        "changelog": "Remove more_vert (More) button from card overlay.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.28.0/watchlist_1.0.28.0.zip",
+        "checksum": "d1d3a24f671e96d88317fe3270774eba",
+        "timestamp": "2026-04-29T17:00:00Z"
+      },
+      {
         "version": "1.0.27.0",
         "changelog": "Fix hover overlay not showing: add card-hoverable class to card element. Jellyfin CSS gates cardOverlayButton-hover visibility on this class.",
         "targetAbi": "10.11.0.0",

@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.27.0');
+    console.log(TAG, 'script loaded, version 1.0.28.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -334,18 +334,6 @@
         favIcon.setAttribute('aria-hidden', 'true');
         favBtn.appendChild(favIcon);
         brRow.appendChild(favBtn);
-
-        // More menu
-        var moreBtn = document.createElement('button');
-        moreBtn.setAttribute('is', 'paper-icon-button-light');
-        moreBtn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light';
-        moreBtn.setAttribute('data-action', 'menu');
-        moreBtn.title = 'More';
-        var moreIcon = document.createElement('span');
-        moreIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover more_vert';
-        moreIcon.setAttribute('aria-hidden', 'true');
-        moreBtn.appendChild(moreIcon);
-        brRow.appendChild(moreBtn);
 
         // Remove from Watchlist
         var removeBtn = document.createElement('button');
