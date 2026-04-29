@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.17.0",
+        "changelog": "Diagnostic: bypass [Authorize] middleware, use IAuthorizationContext directly for all endpoints. Logs the raw X-Emby-Authorization header and IAuthorizationContext result to Jellyfin logs on every request. JS now logs full auth header and uses apiVal() helper to handle deviceId/appName as either functions or getter properties.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.17.0/watchlist_1.0.17.0.zip",
+        "checksum": "e2b3352c83b8f95dde7bdc420e7489d9",
+        "timestamp": "2026-04-29T07:00:00Z"
+      },
+      {
         "version": "1.0.16.0",
         "changelog": "Fix X-Emby-Authorization header format. v1.0.15.0 joined \"MediaBrowser\" into the array with .join(\", \") producing \"MediaBrowser, Client=...\" but Jellyfin requires \"MediaBrowser Client=...\" (space not comma). CustomAuthenticationHandler rejected the malformed header with 401.",
         "targetAbi": "10.11.0.0",

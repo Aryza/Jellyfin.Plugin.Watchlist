@@ -2,50 +2,47 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.16.0');
+    console.log(TAG, 'script loaded, version 1.0.17.0');
 
     function apiClient() {
         return window.ApiClient || null;
     }
 
-    // Extract access token from ApiClient regardless of which internal field
-    // jellyfin-apiclient uses in the running web version.
+    // Read an ApiClient property that may be a method or a getter/plain value.
+    function apiVal(c, name) {
+        var v = c[name];
+        return typeof v === 'function' ? v.call(c) : v;
+    }
+
     function getToken(c) {
         try {
-            if (typeof c.accessToken === 'function') {
-                var t = c.accessToken();
-                if (t) return t;
-            }
+            var t = apiVal(c, 'accessToken');
+            if (t) return t;
             if (c._serverInfo && c._serverInfo.AccessToken) return c._serverInfo.AccessToken;
             if (c.currentUser  && c.currentUser.AccessToken)  return c.currentUser.AccessToken;
         } catch (e) { /* best effort */ }
         return null;
     }
 
-    // Explicit native fetch with full X-Emby-Authorization header.
-    // ApiClient.ajax exists but its internal _serverInfo.AccessToken has been
-    // observed as null in some 10.11 environments, producing 401 silently.
     async function jfAjax(method, path) {
         var c = apiClient();
         if (!c) return Promise.reject(new Error('ApiClient unavailable'));
 
         var token = getToken(c);
-        console.log(TAG, 'jfAjax', method, path,
-            'token:', token ? token.slice(0, 8) + '...' : 'NULL — will 401');
-
         if (!token) return Promise.reject(Object.assign(new Error('No access token'), { status: 0 }));
 
         var url = typeof c.getUrl === 'function' ? c.getUrl(path) : path;
 
-        // Format: "MediaBrowser Client="...", Device="...", ..."
-        // NOTE: space (not comma) between "MediaBrowser" and the first key=value pair.
         var authHeader = 'MediaBrowser ' + [
-            'Client="'  + (typeof c.appName            === 'function' ? c.appName()            : 'Jellyfin Web') + '"',
-            'Device="'  + (typeof c.deviceName         === 'function' ? c.deviceName()         : 'Browser')      + '"',
-            'DeviceId="'+ (typeof c.deviceId           === 'function' ? c.deviceId()           : 'unknown')      + '"',
-            'Version="' + (typeof c.applicationVersion === 'function' ? c.applicationVersion() : '1.0.0')        + '"',
-            'Token="'   + token + '"'
+            'Client="'   + (apiVal(c, 'appName')            || 'Jellyfin Web') + '"',
+            'Device="'   + (apiVal(c, 'deviceName')         || 'Browser')      + '"',
+            'DeviceId="' + (apiVal(c, 'deviceId')           || 'unknown')      + '"',
+            'Version="'  + (apiVal(c, 'applicationVersion') || '1.0.0')        + '"',
+            'Token="'    + token + '"'
         ].join(', ');
+
+        // Log full header so we can compare against a working Jellyfin API call.
+        console.log(TAG, 'jfAjax', method, path, 'header:', authHeader);
 
         var resp = await window.fetch(url, {
             method:  method,

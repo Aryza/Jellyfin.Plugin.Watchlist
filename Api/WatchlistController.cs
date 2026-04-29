@@ -1,8 +1,8 @@
 // Api/WatchlistController.cs
 using System.Reflection;
-using System.Security.Claims;
 using Jellyfin.Plugin.Watchlist.Services;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -11,29 +11,31 @@ namespace Jellyfin.Plugin.Watchlist.Api;
 
 [ApiController]
 [Route("Watchlist")]
-[Authorize(AuthenticationSchemes = "CustomAuthentication")]
+[AllowAnonymous]
 public class WatchlistController : ControllerBase
 {
-    private readonly WatchlistService               _watchlist;
-    private readonly ILibraryManager                _library;
-    private readonly ILogger<WatchlistController>   _logger;
+    private readonly WatchlistService             _watchlist;
+    private readonly ILibraryManager              _library;
+    private readonly ILogger<WatchlistController> _logger;
+    private readonly IAuthorizationContext        _authContext;
 
     public WatchlistController(
         WatchlistService watchlist,
         ILibraryManager library,
-        ILogger<WatchlistController> logger)
+        ILogger<WatchlistController> logger,
+        IAuthorizationContext authContext)
     {
-        _watchlist = watchlist;
-        _library   = library;
-        _logger    = logger;
+        _watchlist   = watchlist;
+        _library     = library;
+        _logger      = logger;
+        _authContext = authContext;
     }
 
     // ── GET /Watchlist/Items ─────────────────────────────────────────────────
-    // Returns entries ordered by AddedAt desc.
     [HttpGet("Items")]
-    public ActionResult GetItems()
+    public async Task<ActionResult> GetItems()
     {
-        var userId = GetUserId();
+        var userId = await GetUserIdAsync().ConfigureAwait(false);
         if (userId == Guid.Empty) return Unauthorized();
 
         var entries = _watchlist.GetEntries(userId);
@@ -46,11 +48,10 @@ public class WatchlistController : ControllerBase
     }
 
     // ── POST /Watchlist/Items/{itemId} ───────────────────────────────────────
-    // Adds item. Resolves mediaType from library. 409 if already present.
     [HttpPost("Items/{itemId}")]
-    public ActionResult AddItem(Guid itemId)
+    public async Task<ActionResult> AddItem(Guid itemId)
     {
-        var userId = GetUserId();
+        var userId = await GetUserIdAsync().ConfigureAwait(false);
         if (userId == Guid.Empty) return Unauthorized();
 
         if (_watchlist.Contains(userId, itemId))
@@ -59,16 +60,15 @@ public class WatchlistController : ControllerBase
         var item = _library.GetItemById(itemId);
         if (item is null) return NotFound(new { message = "Item not found in library." });
 
-        var mediaType = item.GetBaseItemKind().ToString(); // stable enum: Movie, Series, etc.
-        _watchlist.Add(userId, itemId, mediaType);
+        _watchlist.Add(userId, itemId, item.GetBaseItemKind().ToString());
         return Ok(new { inWatchlist = true });
     }
 
     // ── DELETE /Watchlist/Items/{itemId} ─────────────────────────────────────
     [HttpDelete("Items/{itemId}")]
-    public ActionResult RemoveItem(Guid itemId)
+    public async Task<ActionResult> RemoveItem(Guid itemId)
     {
-        var userId = GetUserId();
+        var userId = await GetUserIdAsync().ConfigureAwait(false);
         if (userId == Guid.Empty) return Unauthorized();
 
         if (!_watchlist.Remove(userId, itemId))
@@ -78,21 +78,17 @@ public class WatchlistController : ControllerBase
     }
 
     // ── GET /Watchlist/Status/{itemId} ───────────────────────────────────────
-    // Lightweight check; used by bookmark button on page load.
     [HttpGet("Status/{itemId}")]
-    public ActionResult GetStatus(Guid itemId)
+    public async Task<ActionResult> GetStatus(Guid itemId)
     {
-        var userId = GetUserId();
+        var userId = await GetUserIdAsync().ConfigureAwait(false);
         if (userId == Guid.Empty) return Unauthorized();
 
         return Ok(new { inWatchlist = _watchlist.Contains(userId, itemId) });
     }
 
     // ── GET /Watchlist/watchlist.js ──────────────────────────────────────────
-    // Bookmark button script (embedded resource), referenced by the injected
-    // <script src="/Watchlist/watchlist.js"> tag in index.html.
     [HttpGet("watchlist.js")]
-    [AllowAnonymous]
     public IActionResult GetScript()
     {
         const string resourceName = "Jellyfin.Plugin.Watchlist.Web.watchlist.js";
@@ -108,9 +104,26 @@ public class WatchlistController : ControllerBase
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private Guid GetUserId()
+    private async Task<Guid> GetUserIdAsync()
     {
-        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(idStr, out var id) ? id : Guid.Empty;
+        var rawHeader = Request.Headers["X-Emby-Authorization"].ToString();
+        _logger.LogInformation(
+            "Watchlist auth: header present={Present}, preview='{Preview}'",
+            rawHeader.Length > 0,
+            rawHeader.Length > 60 ? rawHeader[..60] : rawHeader);
+
+        try
+        {
+            var info = await _authContext.GetAuthorizationInfo(Request).ConfigureAwait(false);
+            _logger.LogInformation(
+                "Watchlist auth: IsAuthenticated={IsAuth}, UserId={UserId}",
+                info.IsAuthenticated, info.UserId);
+            return info.IsAuthenticated ? info.UserId : Guid.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Watchlist auth: IAuthorizationContext threw");
+            return Guid.Empty;
+        }
     }
 }
