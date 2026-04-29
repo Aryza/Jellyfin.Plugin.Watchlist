@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.28.0');
+    console.log(TAG, 'script loaded, version 1.0.29.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -125,6 +125,16 @@
     }
 
     var _state = {};
+    var _wlIds = null; // cached Set of watchlist item IDs; null = stale
+
+    function invalidateWlCache() { _wlIds = null; }
+
+    async function getWatchlistIds() {
+        if (_wlIds !== null) return _wlIds;
+        var entries = await jfAjax('GET', 'Watchlist/Items');
+        _wlIds = new Set((entries || []).map(function (e) { return e.jellyfinItemId; }));
+        return _wlIds;
+    }
 
     function buttonStateFor(itemId, inWatchlist) {
         _state[itemId] = inWatchlist;
@@ -173,6 +183,59 @@
         return btn;
     }
 
+    async function injectCardButtons() {
+        var rows = document.querySelectorAll('.cardOverlayButton-br:not([data-wl-injected])');
+        if (!rows.length) return;
+
+        var ids;
+        try { ids = await getWatchlistIds(); }
+        catch (e) { console.warn(TAG, 'injectCardButtons: fetch failed', e); return; }
+
+        rows.forEach(function (row) {
+            row.setAttribute('data-wl-injected', '1');
+            var card = row.closest('[data-id]');
+            if (!card) return;
+            var itemId = card.getAttribute('data-id');
+            if (!itemId) return;
+
+            var inWl = ids.has(itemId);
+
+            var btn = document.createElement('button');
+            btn.setAttribute('is', 'paper-icon-button-light');
+            btn.type = 'button';
+            btn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light';
+            btn.title = inWl ? 'Remove from Watchlist' : 'Add to Watchlist';
+            btn.setAttribute('data-watchlist-state', inWl ? '1' : '0');
+
+            var icon = document.createElement('span');
+            icon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover ' +
+                (inWl ? 'bookmark' : 'bookmark_border');
+            icon.setAttribute('aria-hidden', 'true');
+            btn.appendChild(icon);
+
+            btn.addEventListener('click', async function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                var current = btn.getAttribute('data-watchlist-state') === '1';
+                var method = current ? 'DELETE' : 'POST';
+                try {
+                    await jfAjax(method, 'Watchlist/Items/' + itemId);
+                    var newState = !current;
+                    btn.setAttribute('data-watchlist-state', newState ? '1' : '0');
+                    btn.title = newState ? 'Remove from Watchlist' : 'Add to Watchlist';
+                    icon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover ' +
+                        (newState ? 'bookmark' : 'bookmark_border');
+                    invalidateWlCache();
+                    if (method === 'DELETE') reloadWatchlistTab();
+                } catch (e) {
+                    console.warn(TAG, 'card wl toggle failed for', itemId, e);
+                }
+            });
+
+            row.appendChild(btn);
+        });
+    }
+
     async function ensureButton() {
         if (!looksLikeDetailsPage()) return;
 
@@ -212,6 +275,7 @@
                 await jfAjax(method, 'Watchlist/Items/' + itemId);
                 applyButtonState(btn, !current);
                 console.log(TAG, method, 'OK for', itemId);
+                invalidateWlCache();
                 if (method === 'DELETE') reloadWatchlistTab();
             } catch (e) {
                 console.warn(TAG, method, 'failed', e && e.status, e);
@@ -231,6 +295,7 @@
     // watchlist.js builds all child elements itself and loads data.
 
     function reloadWatchlistTab() {
+        invalidateWlCache();
         var page = document.getElementById('watchlistTabPage');
         if (!page) return;
         delete page.dataset.wlLoaded;
@@ -490,6 +555,7 @@
                     console.log(TAG, 'navigation detected (' + reason + '):', lastUrl);
                 }
                 ensureButton();
+                injectCardButtons();
                 loadWatchlistTab();
             }, 250);
         }
