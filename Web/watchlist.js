@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.23.0');
+    console.log(TAG, 'script loaded, version 1.0.24.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -232,13 +232,14 @@
     function buildWatchlistCard(item, c, grid, empty) {
         var serverId = apiVal(c, 'serverId') || item.ServerId || '';
         var tag = item.ImageTags && item.ImageTags.Primary;
-        var imgSrc = '/Items/' + item.Id + '/Images/Primary?maxHeight=300' +
+        var imgSrc = '/Items/' + item.Id + '/Images/Primary?maxHeight=450' +
             (tag ? '&tag=' + encodeURIComponent(tag) : '') + '&quality=90';
         var detailHref = '#/details?id=' + item.Id +
             (serverId ? '&serverId=' + encodeURIComponent(serverId) : '');
 
         var card = document.createElement('div');
         card.className = 'card portrait-card';
+        card.style.width = '170px';
 
         var box = document.createElement('div');
         box.className = 'cardBox';
@@ -290,17 +291,23 @@
         var footer = document.createElement('div');
         footer.className = 'cardFooter';
 
+        var footerLink = document.createElement('a');
+        footerLink.href = detailHref;
+        footerLink.style.cssText = 'text-decoration:none;color:inherit;display:block;';
+
         var nameEl = document.createElement('div');
         nameEl.className = 'cardText cardTextCentered';
         nameEl.textContent = item.Name;
-        footer.appendChild(nameEl);
+        footerLink.appendChild(nameEl);
 
         if (item.ProductionYear) {
             var yearEl = document.createElement('div');
             yearEl.className = 'cardText cardText-secondary cardTextCentered';
             yearEl.textContent = String(item.ProductionYear);
-            footer.appendChild(yearEl);
+            footerLink.appendChild(yearEl);
         }
+
+        footer.appendChild(footerLink);
 
         box.appendChild(scalable);
         box.appendChild(footer);
