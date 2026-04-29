@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.21.0');
+    console.log(TAG, 'script loaded, version 1.0.22.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -238,31 +238,35 @@
         if (page.dataset.wlLoaded && page.children.length > 0) return;
         page.dataset.wlLoaded = '1';
 
-        // Build DOM structure entirely in JS.
+        // Build DOM structure mirroring Jellyfin's library page layout.
         page.innerHTML = '';
-        page.style.cssText = 'padding:1.5em 2em;';
+        page.className = 'padded-top padded-left padded-right';
+
+        var titleBar = document.createElement('div');
+        titleBar.className = 'sectionTitleContainer sectionTitleContainer-cards';
 
         var h2 = document.createElement('h2');
         h2.className   = 'sectionTitle';
-        h2.style.cssText = 'margin:0 0 1em;font-size:1.4em;font-weight:600;';
         h2.textContent = 'My Watchlist';
+        titleBar.appendChild(h2);
 
-        var loading = document.createElement('p');
-        loading.id          = 'wlLoading';
-        loading.textContent = 'Loading…';
+        var loading = document.createElement('div');
+        loading.id        = 'wlLoading';
+        loading.className = 'loadingContent';
         loading.style.cssText = 'text-align:center;padding:4em 1em;opacity:.55;';
+        loading.textContent = 'Loading…';
 
-        var empty = document.createElement('p');
+        var empty = document.createElement('div');
         empty.id          = 'wlEmpty';
-        empty.textContent = 'Your watchlist is empty. Tap 🔖 on any movie or series to add it.';
+        empty.className   = 'noItemsMessage';
         empty.style.cssText = 'display:none;text-align:center;padding:4em 1em;opacity:.55;';
+        empty.textContent = 'Your watchlist is empty. Tap 🔖 on any movie or series to add it.';
 
         var grid = document.createElement('div');
         grid.id        = 'wlGrid';
-        grid.className = 'itemsContainer vertical-wrap';
-        grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:1em;';
+        grid.className = 'itemsContainer vertical-wrap padded-left padded-right';
 
-        page.appendChild(h2);
+        page.appendChild(titleBar);
         page.appendChild(loading);
         page.appendChild(empty);
         page.appendChild(grid);
@@ -305,9 +309,9 @@
                         shape:             'portrait',
                         showTitle:         true,
                         showYear:          true,
+                        centerText:        true,
                         overlayPlayButton: true,
                         overlayMoreButton: true,
-                        centerText:        false,
                         cardLayout:        false,
                         serverId:          apiVal(c, 'serverId')
                     });
