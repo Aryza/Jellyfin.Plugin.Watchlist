@@ -31,6 +31,33 @@
     (function () {
         var page = document.getElementById('watchlistTabPage');
 
+        // Read an ApiClient property that may be a method or a getter/plain value.
+        function apiVal(c, name) {
+            var v = c[name];
+            return typeof v === 'function' ? v.call(c) : v;
+        }
+
+        function buildAuthHeader(c) {
+            var token = apiVal(c, 'accessToken');
+            if (!token && c._serverInfo) token = c._serverInfo.AccessToken;
+            if (!token) return null;
+            return 'MediaBrowser ' + [
+                'Client="'   + (apiVal(c, 'appName')            || 'Jellyfin Web') + '"',
+                'Device="'   + (apiVal(c, 'deviceName')         || 'Browser')      + '"',
+                'DeviceId="' + (apiVal(c, 'deviceId')           || 'unknown')      + '"',
+                'Version="'  + (apiVal(c, 'applicationVersion') || '1.0.0')        + '"',
+                'Token="'    + token + '"'
+            ].join(', ');
+        }
+
+        function getUserId(c) {
+            // Try common method names across Jellyfin web versions.
+            var id = apiVal(c, 'getCurrentUserId') || apiVal(c, 'currentUserId');
+            if (!id && c._currentUser) id = c._currentUser.Id;
+            if (!id && c.currentUser)  id = c.currentUser.Id;
+            return id || null;
+        }
+
         async function loadWatchlist() {
             var loading = document.getElementById('wlLoading');
             var empty   = document.getElementById('wlEmpty');
@@ -40,12 +67,25 @@
             empty.classList.remove('visible');
             grid.innerHTML = '';
 
+            var c = window.ApiClient;
+            if (!c) {
+                loading.style.display = 'none';
+                showError(grid, 'ApiClient not available');
+                return;
+            }
+
+            var authHeader = buildAuthHeader(c);
+            if (!authHeader) {
+                loading.style.display = 'none';
+                showError(grid, 'Not authenticated');
+                return;
+            }
+
             try {
-                var token = window.ApiClient ? window.ApiClient.accessToken() : '';
-                var resp  = await fetch('/Watchlist/Items', {
-                    headers: { 'Authorization': 'MediaBrowser Token=' + token }
+                var resp = await fetch('/Watchlist/Items', {
+                    headers: { 'X-Emby-Authorization': authHeader }
                 });
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                if (!resp.ok) throw new Error('GET /Watchlist/Items returned ' + resp.status);
                 var entries = await resp.json();
 
                 loading.style.display = 'none';
@@ -55,9 +95,11 @@
                     return;
                 }
 
-                var ids     = entries.map(function (e) { return e.jellyfinItemId; }).join(',');
-                var userId  = window.ApiClient.getCurrentUserId();
-                var items   = await window.ApiClient.getItems(userId, {
+                var ids    = entries.map(function (e) { return e.jellyfinItemId; }).join(',');
+                var userId = getUserId(c);
+                if (!userId) throw new Error('Could not determine current userId');
+
+                var items = await c.getItems(userId, {
                     Ids:              ids,
                     Fields:           'PrimaryImageAspectRatio,Overview',
                     ImageTypeLimit:   1,
@@ -69,27 +111,30 @@
                     return;
                 }
 
-                // Use Jellyfin's native cardBuilder for identical look to movies view
-                require(['cardBuilder', 'apphost'], function (cardBuilder, appHost) {
+                require(['cardBuilder'], function (cardBuilder) {
                     cardBuilder.buildCards(items.Items, {
-                        itemsContainer:   grid,
-                        shape:            'portrait',
-                        showTitle:        true,
-                        showYear:         true,
+                        itemsContainer:    grid,
+                        shape:             'portrait',
+                        showTitle:         true,
+                        showYear:          true,
                         overlayPlayButton: true,
                         overlayMoreButton: true,
-                        centerText:       false,
-                        cardLayout:       false,
-                        serverId:         window.ApiClient.serverId()
+                        centerText:        false,
+                        cardLayout:        false,
+                        serverId:          apiVal(c, 'serverId')
                     });
                 });
             } catch (e) {
                 loading.style.display = 'none';
-                var errP = document.createElement('p');
-                errP.style.color = '#f87171';
-                errP.textContent = 'Failed to load watchlist: ' + e.message;
-                grid.appendChild(errP);
+                showError(grid, e.message);
             }
+        }
+
+        function showError(grid, msg) {
+            var p = document.createElement('p');
+            p.style.color = '#f87171';
+            p.textContent = 'Watchlist error: ' + msg;
+            grid.appendChild(p);
         }
 
         page.addEventListener('pageshow', loadWatchlist);

@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.18.0",
+        "changelog": "Fix watchlist tab: use full X-Emby-Authorization header (old format Authorization: MediaBrowser Token=... was failing). Handle getCurrentUserId vs currentUserId across web versions. Use apiVal() helper for getter/method duality. Better error display in tab.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.18.0/watchlist_1.0.18.0.zip",
+        "checksum": "0290094b1d27783c1260035cd483f272",
+        "timestamp": "2026-04-29T08:00:00Z"
+      },
+      {
         "version": "1.0.17.0",
         "changelog": "Diagnostic: bypass [Authorize] middleware, use IAuthorizationContext directly for all endpoints. Logs the raw X-Emby-Authorization header and IAuthorizationContext result to Jellyfin logs on every request. JS now logs full auth header and uses apiVal() helper to handle deviceId/appName as either functions or getter properties.",
         "targetAbi": "10.11.0.0",
