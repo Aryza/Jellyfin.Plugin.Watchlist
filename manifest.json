@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.21.0",
+        "changelog": "Diagnostic: log loadWatchlistTab entry (element found/null, wlLoaded, children count) on every tick so we can see why #watchlistTabPage is not being populated. Also retry if wlLoaded but children=0 (prior run failed before building DOM).",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.21.0/watchlist_1.0.21.0.zip",
+        "checksum": "da49db810f81c9b44dafee8b786ec423",
+        "timestamp": "2026-04-29T11:00:00Z"
+      },
+      {
         "version": "1.0.20.0",
         "changelog": "Tab trigger changed to #watchlistTabPage. watchlist.js now builds all child HTML (h2, loading, empty, grid) itself. CustomTabs HTML setting needs only: <div id=\"watchlistTabPage\"></div>",
         "targetAbi": "10.11.0.0",

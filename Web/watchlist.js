@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.20.0');
+    console.log(TAG, 'script loaded, version 1.0.21.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -231,8 +231,11 @@
 
     async function loadWatchlistTab() {
         var page = document.getElementById('watchlistTabPage');
+        console.log(TAG, 'loadWatchlistTab: page=' + (page ? 'found' : 'null') +
+            (page ? ' wlLoaded=' + (page.dataset.wlLoaded || '0') + ' children=' + page.children.length : ''));
         if (!page) return;
-        if (page.dataset.wlLoaded) return;
+        // Retry if wlLoaded but page is still empty (prior run failed before building DOM).
+        if (page.dataset.wlLoaded && page.children.length > 0) return;
         page.dataset.wlLoaded = '1';
 
         // Build DOM structure entirely in JS.
