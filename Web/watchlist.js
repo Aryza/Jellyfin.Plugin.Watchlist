@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.22.0');
+    console.log(TAG, 'script loaded, version 1.0.23.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -229,6 +229,98 @@
     //   <div id="watchlistTabPage"></div>
     // watchlist.js builds all child elements itself and loads data.
 
+    function buildWatchlistCard(item, c, grid, empty) {
+        var serverId = apiVal(c, 'serverId') || item.ServerId || '';
+        var tag = item.ImageTags && item.ImageTags.Primary;
+        var imgSrc = '/Items/' + item.Id + '/Images/Primary?maxHeight=300' +
+            (tag ? '&tag=' + encodeURIComponent(tag) : '') + '&quality=90';
+        var detailHref = '#/details?id=' + item.Id +
+            (serverId ? '&serverId=' + encodeURIComponent(serverId) : '');
+
+        var card = document.createElement('div');
+        card.className = 'card portrait-card';
+
+        var box = document.createElement('div');
+        box.className = 'cardBox';
+
+        var scalable = document.createElement('div');
+        scalable.className = 'cardScalable';
+        scalable.style.position = 'relative';
+
+        var padder = document.createElement('div');
+        padder.className = 'cardPadder cardPadder-portrait';
+
+        var link = document.createElement('a');
+        link.href = detailHref;
+        link.className = 'cardContent cardContent-shadow';
+
+        var imgContainer = document.createElement('div');
+        imgContainer.className = 'cardImageContainer coveredImage';
+
+        if (tag) {
+            var img = document.createElement('img');
+            img.className = 'cardImage';
+            img.src = imgSrc;
+            img.alt = '';
+            imgContainer.appendChild(img);
+        } else {
+            var iconSpan = document.createElement('span');
+            iconSpan.className = 'material-icons cardImageIcon';
+            iconSpan.textContent = 'movie';
+            imgContainer.appendChild(iconSpan);
+        }
+
+        link.appendChild(imgContainer);
+        scalable.appendChild(padder);
+        scalable.appendChild(link);
+
+        var removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'paper-icon-button-light';
+        removeBtn.title = 'Remove from Watchlist';
+        removeBtn.style.cssText = 'position:absolute;top:4px;right:4px;z-index:2;' +
+            'background:rgba(0,0,0,.55);border-radius:50%;padding:4px;min-width:0;';
+        var removeIcon = document.createElement('span');
+        removeIcon.className = 'material-icons md-18';
+        removeIcon.setAttribute('aria-hidden', 'true');
+        removeIcon.textContent = 'close';
+        removeBtn.appendChild(removeIcon);
+        scalable.appendChild(removeBtn);
+
+        var footer = document.createElement('div');
+        footer.className = 'cardFooter';
+
+        var nameEl = document.createElement('div');
+        nameEl.className = 'cardText cardTextCentered';
+        nameEl.textContent = item.Name;
+        footer.appendChild(nameEl);
+
+        if (item.ProductionYear) {
+            var yearEl = document.createElement('div');
+            yearEl.className = 'cardText cardText-secondary cardTextCentered';
+            yearEl.textContent = String(item.ProductionYear);
+            footer.appendChild(yearEl);
+        }
+
+        box.appendChild(scalable);
+        box.appendChild(footer);
+        card.appendChild(box);
+
+        removeBtn.addEventListener('click', async function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            try {
+                await jfAjax('DELETE', 'Watchlist/Items/' + item.Id);
+                card.remove();
+                if (grid.children.length === 0) empty.style.display = '';
+            } catch (e) {
+                console.warn(TAG, 'DELETE failed', e);
+            }
+        });
+
+        return card;
+    }
+
     async function loadWatchlistTab() {
         var page = document.getElementById('watchlistTabPage');
         console.log(TAG, 'loadWatchlistTab: page=' + (page ? 'found' : 'null') +
@@ -302,31 +394,9 @@
                 return;
             }
 
-            if (typeof require !== 'undefined') {
-                require(['cardBuilder'], function (cardBuilder) {
-                    cardBuilder.buildCards(result.Items, {
-                        itemsContainer:    grid,
-                        shape:             'portrait',
-                        showTitle:         true,
-                        showYear:          true,
-                        centerText:        true,
-                        overlayPlayButton: true,
-                        overlayMoreButton: true,
-                        cardLayout:        false,
-                        serverId:          apiVal(c, 'serverId')
-                    });
-                });
-            } else {
-                result.Items.forEach(function (item) {
-                    var el = document.createElement('div');
-                    el.style.cssText = 'padding:.4em 0;cursor:pointer;';
-                    el.textContent   = item.Name + (item.ProductionYear ? ' (' + item.ProductionYear + ')' : '');
-                    el.addEventListener('click', function () {
-                        window.location.href = '#/details?id=' + item.Id + '&serverId=' + apiVal(c, 'serverId');
-                    });
-                    grid.appendChild(el);
-                });
-            }
+            result.Items.forEach(function (item) {
+                grid.appendChild(buildWatchlistCard(item, c, grid, empty));
+            });
         } catch (e) {
             console.error(TAG, 'tab load error:', e);
             loading.style.display = '';
