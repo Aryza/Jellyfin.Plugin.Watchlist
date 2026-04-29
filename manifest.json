@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.19.0",
+        "changelog": "Move watchlist tab rendering into watchlist.js. CustomTabs stores HTML as static content — inline scripts don't execute. watchlist.js now watches for #wlGrid in the DOM and populates it via loadWatchlistTab(). Paste skeleton HTML into CustomTabs settings (see comment in watchlist.js). Falls back to plain text list if cardBuilder unavailable.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.19.0/watchlist_1.0.19.0.zip",
+        "checksum": "2343d6a994f36b4851342f2f125465f5",
+        "timestamp": "2026-04-29T09:00:00Z"
+      },
+      {
         "version": "1.0.18.0",
         "changelog": "Fix watchlist tab: use full X-Emby-Authorization header (old format Authorization: MediaBrowser Token=... was failing). Handle getCurrentUserId vs currentUserId across web versions. Use apiVal() helper for getter/method duality. Better error display in tab.",
         "targetAbi": "10.11.0.0",
