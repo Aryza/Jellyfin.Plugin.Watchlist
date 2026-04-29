@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.24.0');
+    console.log(TAG, 'script loaded, version 1.0.25.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -232,8 +232,9 @@
     function buildWatchlistCard(item, c, grid, empty) {
         var serverId = apiVal(c, 'serverId') || item.ServerId || '';
         var tag = item.ImageTags && item.ImageTags.Primary;
-        var imgSrc = '/Items/' + item.Id + '/Images/Primary?maxHeight=450' +
-            (tag ? '&tag=' + encodeURIComponent(tag) : '') + '&quality=90';
+        var imgUrl = tag
+            ? '/Items/' + item.Id + '/Images/Primary?fillHeight=570&fillWidth=400&quality=96&tag=' + encodeURIComponent(tag)
+            : null;
         var detailHref = '#/details?id=' + item.Id +
             (serverId ? '&serverId=' + encodeURIComponent(serverId) : '');
 
@@ -242,75 +243,88 @@
         card.style.width = '170px';
 
         var box = document.createElement('div');
-        box.className = 'cardBox';
+        box.className = 'cardBox cardBox-bottompadded';
 
         var scalable = document.createElement('div');
         scalable.className = 'cardScalable';
-        scalable.style.position = 'relative';
 
+        // Aspect-ratio spacer; fallback icon shown when no poster.
         var padder = document.createElement('div');
         padder.className = 'cardPadder cardPadder-portrait';
-
-        var link = document.createElement('a');
-        link.href = detailHref;
-        link.className = 'cardContent cardContent-shadow';
-
-        var imgContainer = document.createElement('div');
-        imgContainer.className = 'cardImageContainer coveredImage';
-
-        if (tag) {
-            var img = document.createElement('img');
-            img.className = 'cardImage';
-            img.src = imgSrc;
-            img.alt = '';
-            imgContainer.appendChild(img);
-        } else {
+        if (!tag) {
             var iconSpan = document.createElement('span');
-            iconSpan.className = 'material-icons cardImageIcon';
-            iconSpan.textContent = 'movie';
-            imgContainer.appendChild(iconSpan);
+            iconSpan.className = 'cardImageIcon material-icons movie';
+            iconSpan.setAttribute('aria-hidden', 'true');
+            padder.appendChild(iconSpan);
         }
 
-        link.appendChild(imgContainer);
-        scalable.appendChild(padder);
-        scalable.appendChild(link);
+        // Image rendered as background-image on the link, matching Jellyfin's pattern.
+        var imgLink = document.createElement('a');
+        imgLink.href = detailHref;
+        imgLink.setAttribute('data-action', 'link');
+        imgLink.className = 'cardImageContainer coveredImage cardContent itemAction';
+        imgLink.setAttribute('aria-label', item.Name);
+        imgLink.setAttribute('role', 'img');
+        if (imgUrl) imgLink.style.backgroundImage = 'url("' + imgUrl + '")';
+
+        // Overlay: play (primary) + bottom-right row with remove button.
+        var overlay = document.createElement('div');
+        overlay.className = 'cardOverlayContainer';
+
+        var playBtn = document.createElement('button');
+        playBtn.setAttribute('is', 'paper-icon-button-light');
+        playBtn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light cardOverlayFab-primary';
+        playBtn.setAttribute('data-action', 'resume');
+        playBtn.title = 'Play';
+        var playIcon = document.createElement('span');
+        playIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover play_arrow';
+        playIcon.setAttribute('aria-hidden', 'true');
+        playBtn.appendChild(playIcon);
+        overlay.appendChild(playBtn);
+
+        var brRow = document.createElement('div');
+        brRow.className = 'cardOverlayButton-br flex';
 
         var removeBtn = document.createElement('button');
+        removeBtn.setAttribute('is', 'paper-icon-button-light');
         removeBtn.type = 'button';
-        removeBtn.className = 'paper-icon-button-light';
+        removeBtn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light';
         removeBtn.title = 'Remove from Watchlist';
-        removeBtn.style.cssText = 'position:absolute;top:4px;right:4px;z-index:2;' +
-            'background:rgba(0,0,0,.55);border-radius:50%;padding:4px;min-width:0;';
         var removeIcon = document.createElement('span');
-        removeIcon.className = 'material-icons md-18';
+        removeIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover close';
         removeIcon.setAttribute('aria-hidden', 'true');
-        removeIcon.textContent = 'close';
         removeBtn.appendChild(removeIcon);
-        scalable.appendChild(removeBtn);
+        brRow.appendChild(removeBtn);
+        overlay.appendChild(brRow);
 
-        var footer = document.createElement('div');
-        footer.className = 'cardFooter';
+        scalable.appendChild(padder);
+        scalable.appendChild(imgLink);
+        scalable.appendChild(overlay);
+        box.appendChild(scalable);
 
-        var footerLink = document.createElement('a');
-        footerLink.href = detailHref;
-        footerLink.style.cssText = 'text-decoration:none;color:inherit;display:block;';
-
-        var nameEl = document.createElement('div');
-        nameEl.className = 'cardText cardTextCentered';
-        nameEl.textContent = item.Name;
-        footerLink.appendChild(nameEl);
+        // Title — direct child of cardBox, no cardFooter wrapper.
+        var titleDiv = document.createElement('div');
+        titleDiv.className = 'cardText cardTextCentered cardText-first';
+        var titleBdi = document.createElement('bdi');
+        var titleLink = document.createElement('a');
+        titleLink.href = detailHref;
+        titleLink.setAttribute('data-action', 'link');
+        titleLink.className = 'itemAction textActionButton';
+        titleLink.title = item.Name;
+        titleLink.textContent = item.Name;
+        titleBdi.appendChild(titleLink);
+        titleDiv.appendChild(titleBdi);
+        box.appendChild(titleDiv);
 
         if (item.ProductionYear) {
-            var yearEl = document.createElement('div');
-            yearEl.className = 'cardText cardText-secondary cardTextCentered';
-            yearEl.textContent = String(item.ProductionYear);
-            footerLink.appendChild(yearEl);
+            var yearDiv = document.createElement('div');
+            yearDiv.className = 'cardText cardTextCentered cardText-secondary';
+            var yearBdi = document.createElement('bdi');
+            yearBdi.textContent = String(item.ProductionYear);
+            yearDiv.appendChild(yearBdi);
+            box.appendChild(yearDiv);
         }
 
-        footer.appendChild(footerLink);
-
-        box.appendChild(scalable);
-        box.appendChild(footer);
         card.appendChild(box);
 
         removeBtn.addEventListener('click', async function (ev) {
