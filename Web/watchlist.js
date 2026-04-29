@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.26.0');
+    console.log(TAG, 'script loaded, version 1.0.27.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -248,7 +248,7 @@
             (serverId ? '&serverId=' + encodeURIComponent(serverId) : '');
 
         var card = document.createElement('div');
-        card.className = 'card portrait-card';
+        card.className = 'card portrait-card card-hoverable';
         card.style.width = '170px';
 
         var box = document.createElement('div');
