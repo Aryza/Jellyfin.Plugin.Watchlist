@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.25.0');
+    console.log(TAG, 'script loaded, version 1.0.26.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -212,6 +212,7 @@
                 await jfAjax(method, 'Watchlist/Items/' + itemId);
                 applyButtonState(btn, !current);
                 console.log(TAG, method, 'OK for', itemId);
+                if (method === 'DELETE') reloadWatchlistTab();
             } catch (e) {
                 console.warn(TAG, method, 'failed', e && e.status, e);
             }
@@ -228,6 +229,14 @@
     // Trigger: CustomTabs HTML setting should contain only:
     //   <div id="watchlistTabPage"></div>
     // watchlist.js builds all child elements itself and loads data.
+
+    function reloadWatchlistTab() {
+        var page = document.getElementById('watchlistTabPage');
+        if (!page) return;
+        delete page.dataset.wlLoaded;
+        page.innerHTML = '';
+        loadWatchlistTab();
+    }
 
     function buildWatchlistCard(item, c, grid, empty) {
         var serverId = apiVal(c, 'serverId') || item.ServerId || '';
@@ -267,9 +276,14 @@
         imgLink.setAttribute('role', 'img');
         if (imgUrl) imgLink.style.backgroundImage = 'url("' + imgUrl + '")';
 
-        // Overlay: play (primary) + bottom-right row with remove button.
+        var played     = item.UserData && item.UserData.Played     ? 'true' : 'false';
+        var isFavorite = item.UserData && item.UserData.IsFavorite ? 'true' : 'false';
+        var itemType   = item.Type || 'Movie';
+
+        // Overlay: play (primary) + bottom-right row matching native Jellyfin card.
         var overlay = document.createElement('div');
-        overlay.className = 'cardOverlayContainer';
+        overlay.className = 'cardOverlayContainer itemAction';
+        overlay.setAttribute('data-action', 'link');
 
         var playBtn = document.createElement('button');
         playBtn.setAttribute('is', 'paper-icon-button-light');
@@ -285,16 +299,66 @@
         var brRow = document.createElement('div');
         brRow.className = 'cardOverlayButton-br flex';
 
+        // Mark played
+        var playedBtn = document.createElement('button');
+        playedBtn.setAttribute('is', 'emby-playstatebutton');
+        playedBtn.type = 'button';
+        playedBtn.setAttribute('data-action', 'none');
+        playedBtn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light emby-button';
+        playedBtn.setAttribute('data-id', item.Id);
+        playedBtn.setAttribute('data-serverid', serverId);
+        playedBtn.setAttribute('data-itemtype', itemType);
+        playedBtn.setAttribute('data-played', played);
+        playedBtn.title = 'Mark played';
+        var playedIcon = document.createElement('span');
+        playedIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover check' +
+            (played === 'true' ? '' : ' playstatebutton-icon-unplayed');
+        playedIcon.setAttribute('aria-hidden', 'true');
+        playedBtn.appendChild(playedIcon);
+        brRow.appendChild(playedBtn);
+
+        // Favourite
+        var favBtn = document.createElement('button');
+        favBtn.setAttribute('is', 'emby-ratingbutton');
+        favBtn.type = 'button';
+        favBtn.setAttribute('data-action', 'none');
+        favBtn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light emby-button';
+        favBtn.setAttribute('data-id', item.Id);
+        favBtn.setAttribute('data-serverid', serverId);
+        favBtn.setAttribute('data-itemtype', itemType);
+        favBtn.setAttribute('data-likes', '');
+        favBtn.setAttribute('data-isfavorite', isFavorite);
+        favBtn.title = 'Add to favourites';
+        var favIcon = document.createElement('span');
+        favIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover favorite';
+        favIcon.setAttribute('aria-hidden', 'true');
+        favBtn.appendChild(favIcon);
+        brRow.appendChild(favBtn);
+
+        // More menu
+        var moreBtn = document.createElement('button');
+        moreBtn.setAttribute('is', 'paper-icon-button-light');
+        moreBtn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light';
+        moreBtn.setAttribute('data-action', 'menu');
+        moreBtn.title = 'More';
+        var moreIcon = document.createElement('span');
+        moreIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover more_vert';
+        moreIcon.setAttribute('aria-hidden', 'true');
+        moreBtn.appendChild(moreIcon);
+        brRow.appendChild(moreBtn);
+
+        // Remove from Watchlist
         var removeBtn = document.createElement('button');
         removeBtn.setAttribute('is', 'paper-icon-button-light');
         removeBtn.type = 'button';
         removeBtn.className = 'cardOverlayButton cardOverlayButton-hover itemAction paper-icon-button-light';
         removeBtn.title = 'Remove from Watchlist';
         var removeIcon = document.createElement('span');
-        removeIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover close';
+        removeIcon.className = 'material-icons cardOverlayButtonIcon cardOverlayButtonIcon-hover bookmark_remove';
         removeIcon.setAttribute('aria-hidden', 'true');
         removeBtn.appendChild(removeIcon);
         brRow.appendChild(removeBtn);
+
         overlay.appendChild(brRow);
 
         scalable.appendChild(padder);
@@ -332,8 +396,7 @@
             ev.stopPropagation();
             try {
                 await jfAjax('DELETE', 'Watchlist/Items/' + item.Id);
-                card.remove();
-                if (grid.children.length === 0) empty.style.display = '';
+                reloadWatchlistTab();
             } catch (e) {
                 console.warn(TAG, 'DELETE failed', e);
             }
@@ -405,7 +468,7 @@
 
             var result = await c.getItems(userId, {
                 Ids:              ids,
-                Fields:           'PrimaryImageAspectRatio,Overview',
+                Fields:           'PrimaryImageAspectRatio,Overview,UserData',
                 ImageTypeLimit:   1,
                 EnableImageTypes: 'Primary,Thumb,Backdrop'
             });
