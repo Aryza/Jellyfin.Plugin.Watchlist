@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.19.0');
+    console.log(TAG, 'script loaded, version 1.0.20.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -225,39 +225,55 @@
     }
 
     // ── Watchlist tab rendering ───────────────────────────────────────────────
-    // CustomTabs stores tab HTML as static content (no inline scripts execute).
-    // watchlist.js is already injected into index.html, so it detects #wlGrid
-    // appearing in the DOM and populates it here.
-    //
-    // Skeleton HTML to paste into CustomTabs settings:
-    //   <h2 class="sectionTitle" style="padding:.5em 0">My Watchlist</h2>
-    //   <p id="wlLoading">Loading…</p>
-    //   <p id="wlEmpty" style="display:none">Your watchlist is empty. Tap 🔖 on any movie or series.</p>
-    //   <div id="wlGrid" class="itemsContainer vertical-wrap"></div>
+    // Trigger: CustomTabs HTML setting should contain only:
+    //   <div id="watchlistTabPage"></div>
+    // watchlist.js builds all child elements itself and loads data.
 
     async function loadWatchlistTab() {
-        var grid = document.getElementById('wlGrid');
-        if (!grid) return;
-        // data-wl-loaded is cleared when the DOM node is replaced on SPA navigation.
-        if (grid.dataset.wlLoaded) return;
-        grid.dataset.wlLoaded = '1';
+        var page = document.getElementById('watchlistTabPage');
+        if (!page) return;
+        if (page.dataset.wlLoaded) return;
+        page.dataset.wlLoaded = '1';
 
-        var loading = document.getElementById('wlLoading');
-        var empty   = document.getElementById('wlEmpty');
-        if (loading) { loading.style.display = ''; loading.style.color = ''; loading.textContent = 'Loading…'; }
-        if (empty)   empty.style.display = 'none';
-        grid.innerHTML = '';
+        // Build DOM structure entirely in JS.
+        page.innerHTML = '';
+        page.style.cssText = 'padding:1.5em 2em;';
+
+        var h2 = document.createElement('h2');
+        h2.className   = 'sectionTitle';
+        h2.style.cssText = 'margin:0 0 1em;font-size:1.4em;font-weight:600;';
+        h2.textContent = 'My Watchlist';
+
+        var loading = document.createElement('p');
+        loading.id          = 'wlLoading';
+        loading.textContent = 'Loading…';
+        loading.style.cssText = 'text-align:center;padding:4em 1em;opacity:.55;';
+
+        var empty = document.createElement('p');
+        empty.id          = 'wlEmpty';
+        empty.textContent = 'Your watchlist is empty. Tap 🔖 on any movie or series to add it.';
+        empty.style.cssText = 'display:none;text-align:center;padding:4em 1em;opacity:.55;';
+
+        var grid = document.createElement('div');
+        grid.id        = 'wlGrid';
+        grid.className = 'itemsContainer vertical-wrap';
+        grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:1em;';
+
+        page.appendChild(h2);
+        page.appendChild(loading);
+        page.appendChild(empty);
+        page.appendChild(grid);
 
         console.log(TAG, 'loading watchlist tab');
         var c = apiClient();
-        if (!c) { showTabError(loading, 'ApiClient not available'); return; }
+        if (!c) { loading.textContent = 'ApiClient not available'; loading.style.color = '#f87171'; return; }
 
         try {
             var entries = await jfAjax('GET', 'Watchlist/Items');
-            if (loading) loading.style.display = 'none';
+            loading.style.display = 'none';
 
             if (!entries || entries.length === 0) {
-                if (empty) empty.style.display = '';
+                empty.style.display = '';
                 return;
             }
 
@@ -265,7 +281,7 @@
             var userId = apiVal(c, 'getCurrentUserId') || apiVal(c, 'currentUserId');
             if (!userId && c._currentUser) userId = c._currentUser.Id;
             if (!userId && c.currentUser)  userId = c.currentUser.Id;
-            if (!userId) { showTabError(loading, 'Could not determine user ID'); return; }
+            if (!userId) { loading.style.display = ''; loading.style.color = '#f87171'; loading.textContent = 'Could not determine user ID'; return; }
 
             var result = await c.getItems(userId, {
                 Ids:              ids,
@@ -275,7 +291,7 @@
             });
 
             if (!result || !result.Items || result.Items.length === 0) {
-                if (empty) empty.style.display = '';
+                empty.style.display = '';
                 return;
             }
 
@@ -294,11 +310,10 @@
                     });
                 });
             } else {
-                // Fallback: plain text list if cardBuilder unavailable.
                 result.Items.forEach(function (item) {
                     var el = document.createElement('div');
                     el.style.cssText = 'padding:.4em 0;cursor:pointer;';
-                    el.textContent = item.Name + (item.ProductionYear ? ' (' + item.ProductionYear + ')' : '');
+                    el.textContent   = item.Name + (item.ProductionYear ? ' (' + item.ProductionYear + ')' : '');
                     el.addEventListener('click', function () {
                         window.location.href = '#/details?id=' + item.Id + '&serverId=' + apiVal(c, 'serverId');
                     });
@@ -307,15 +322,10 @@
             }
         } catch (e) {
             console.error(TAG, 'tab load error:', e);
-            showTabError(loading, e.message || String(e));
+            loading.style.display = '';
+            loading.style.color   = '#f87171';
+            loading.textContent   = 'Watchlist error: ' + (e.message || String(e));
         }
-    }
-
-    function showTabError(el, msg) {
-        if (!el) return;
-        el.style.display = '';
-        el.style.color   = '#f87171';
-        el.textContent   = 'Watchlist error: ' + msg;
     }
 
     // Aggressive observation: SPA navigations + DOM mutations.

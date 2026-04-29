@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.20.0",
+        "changelog": "Tab trigger changed to #watchlistTabPage. watchlist.js now builds all child HTML (h2, loading, empty, grid) itself. CustomTabs HTML setting needs only: <div id=\"watchlistTabPage\"></div>",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.20.0/watchlist_1.0.20.0.zip",
+        "checksum": "324d5e72054f8593559453ff9dacb4b5",
+        "timestamp": "2026-04-29T10:00:00Z"
+      },
+      {
         "version": "1.0.19.0",
         "changelog": "Move watchlist tab rendering into watchlist.js. CustomTabs stores HTML as static content — inline scripts don't execute. watchlist.js now watches for #wlGrid in the DOM and populates it via loadWatchlistTab(). Paste skeleton HTML into CustomTabs settings (see comment in watchlist.js). Falls back to plain text list if cardBuilder unavailable.",
         "targetAbi": "10.11.0.0",
