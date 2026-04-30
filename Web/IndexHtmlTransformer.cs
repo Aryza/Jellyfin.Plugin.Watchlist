@@ -22,8 +22,8 @@ public static class IndexHtmlTransformer
 
     private const string Marker    = "watchlist-plugin-marker";
     private const string Injection =
-        "    <meta name=\"watchlist-plugin-marker\" content=\"1.0.29.0\">\n" +
-        "    <script src=\"/Watchlist/watchlist.js?v=1.0.29.0\" defer></script>\n";
+        "    <meta name=\"watchlist-plugin-marker\" content=\"1.0.30.0\">\n" +
+        "    <script src=\"/Watchlist/watchlist.js?v=1.0.30.0\" defer></script>\n";
 
     private static int     _invocationCount;
     private static ILogger? _logger;

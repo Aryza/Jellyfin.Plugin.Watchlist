@@ -2,7 +2,7 @@
     'use strict';
 
     var TAG = '[Watchlist]';
-    console.log(TAG, 'script loaded, version 1.0.29.0');
+    console.log(TAG, 'script loaded, version 1.0.30.0');
 
     function apiClient() {
         return window.ApiClient || null;
@@ -245,7 +245,12 @@
             return;
         }
 
-        if (document.querySelector('.btnWatchlistToggle')) return; // already injected
+        // Guard: if button exists for this exact item, skip. If stale (different item), remove it.
+        var existing = document.querySelector('.btnWatchlistToggle');
+        if (existing) {
+            if (existing.getAttribute('data-item-id') === itemId) return;
+            existing.remove();
+        }
 
         var favBtn = findFavBtn();
         if (!favBtn) {
@@ -255,6 +260,7 @@
 
         console.log(TAG, 'injecting bookmark button for itemId', itemId);
         var btn = makeButton(favBtn);
+        btn.setAttribute('data-item-id', itemId);
 
         try {
             var data = await jfAjax('GET', 'Watchlist/Status/' + itemId);
