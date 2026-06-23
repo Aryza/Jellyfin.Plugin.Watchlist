@@ -1,12 +1,12 @@
 {
   "runtimeTarget": {
-    "name": ".NETCoreApp,Version=v9.0",
+    "name": ".NETCoreApp,Version=v10.0",
     "signature": ""
   },
   "compilationOptions": {},
   "targets": {
-    ".NETCoreApp,Version=v9.0": {
-      "Jellyfin.Plugin.Watchlist/1.0.30.0": {
+    ".NETCoreApp,Version=v10.0": {
+      "Jellyfin.Plugin.Watchlist/1.0.31.0": {
         "dependencies": {
           "Newtonsoft.Json": "13.0.1"
         },
@@ -25,7 +25,7 @@
     }
   },
   "libraries": {
-    "Jellyfin.Plugin.Watchlist/1.0.30.0": {
+    "Jellyfin.Plugin.Watchlist/1.0.31.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

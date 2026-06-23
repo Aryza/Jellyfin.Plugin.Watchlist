@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Jellyfin.Plugin.Watchlist</name>
+    </assembly>
+    <members>
+        <member name="P:Jellyfin.Plugin.Watchlist.Configuration.PluginConfiguration.HomeRowMaxItems">
+            <summary>Maximum items shown in the home-screen row.</summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.HomeSection.SectionPayload">
+            <summary>
+            Mirrors Jellyfin.Plugin.HomeScreenSections.Model.Dto.HomeScreenSectionPayload.
+            HSS deserialises into whatever type the handler method signature declares —
+            no compile-time reference to the HSS assembly is needed.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.HomeSection.SectionRegistrar">
+            <summary>
+            Registers the Watchlist home-screen row with IAmParadox27's HSS plugin,
+            and the Watchlist tab with IAmParadox27's CustomTabs plugin — both via
+            reflection at runtime so neither is a compile-time dependency.
+            Runs as an IHostedService so all plugins are loaded before registration.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.HomeSection.WatchlistSectionHandler">
+            <summary>
+            Returns the user's most recently bookmarked items as a home-screen row.
+            Invoked by the Home Screen Sections plugin via reflection.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Middleware.BookmarkInjectionMiddleware">
+             <summary>
+             Injects the watchlist bookmark script tag into Jellyfin Web's index.html.
+            
+             Strategies (in order):
+               1. Direct — resolves index.html relative to WebRootPath and serves the
+                  modified file directly (works for standard on-premise Jellyfin installs).
+               2. Buffer — captures the response body from the pipeline as a fallback.
+            
+             Both strategies set Cache-Control: no-store so the injected page is never
+             cached at CDN/proxy layers.
+            
+             Pattern mirrors BORNIOS/JellyTrend's ScriptInjectionMiddleware.
+             </summary>
+        </member>
+        <member name="P:Jellyfin.Plugin.Watchlist.Models.WatchlistStore.Entries">
+            <summary>userId (Guid.ToString("N")) → ordered list of watchlist entries.</summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Services.WatchlistEventConsumer">
+            <summary>
+            Removes an item from the user's watchlist when Jellyfin marks it as played.
+            Fires for both manual "mark as played" and automatic 90%-threshold detection.
+            </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Services.WatchlistService">
+            <summary>
+            Thread-safe, JSON-backed watchlist store. One entry list per user.
+            All mutations acquire _lock; the on-disk file is rewritten on every change.
+            </summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Services.WatchlistService.Add(System.Guid,System.Guid,System.String)">
+            <summary>Adds item. No-ops if already present.</summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Services.WatchlistService.Remove(System.Guid,System.Guid)">
+            <summary>Removes item. Returns true if removed, false if not present.</summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Web.FileTransformationRegistrar">
+             <summary>
+             Registers <see cref="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Transform(Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload)"/> with IAmParadox27's
+             File Transformation plugin (loaded into a separate AssemblyLoadContext, so
+             this is done via reflection — no compile-time dependency).
+            
+             Per File Transformation's README: locate its assembly across all load
+             contexts, get the static <c>PluginInterface.RegisterTransformation(JObject)</c>,
+             and invoke it with a payload pointing at our static callback method.
+             </summary>
+        </member>
+        <member name="T:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer">
+             <summary>
+             Callback invoked by IAmParadox27's File Transformation plugin.
+             Receives index.html contents, returns the modified HTML with our bookmark
+             script tag injected before &lt;/body&gt;.
+            
+             Must be static (FileTransformation invokes via reflection) and take exactly
+             one parameter FileTransformation can deserialise from the {"contents":"..."}
+             JObject it constructs.
+             </summary>
+        </member>
+        <member name="P:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload.Contents">
+            <summary>Current file contents.</summary>
+        </member>
+        <member name="P:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.InvocationCount">
+            <summary>Number of times File Transformation has invoked our callback.</summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.SetLogger(Microsoft.Extensions.Logging.ILogger)">
+            <summary>Hooked up at startup by FileTransformationRegistrar so we can log via Jellyfin's logger.</summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.SetDiagFile(System.String)">
+            <summary>Set at startup to a writeable path; Transform appends to it on every call.</summary>
+        </member>
+        <member name="M:Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Transform(Jellyfin.Plugin.Watchlist.Web.IndexHtmlTransformer.Payload)">
+            <summary>
+            File Transformation entry point. Returns the (possibly) modified HTML.
+            </summary>
+        </member>
+    </members>
+</doc>

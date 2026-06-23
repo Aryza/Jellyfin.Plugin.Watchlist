@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.0.31.0",
+        "changelog": "Jellyfin 12.0 compatibility. Bump targetAbi 10.11.0.0 -> 12.0.0.0, build against Jellyfin.Controller/Model 12.0, retarget net9.0 -> net10.0 (required by Jellyfin 12.0 packages). No functional changes.",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/Aryza/Jellyfin.Plugin.Watchlist/releases/download/v1.0.31.0/watchlist_1.0.31.0.zip",
+        "checksum": "363bd9b77d2d773e0f47832a62e863c4",
+        "timestamp": "2026-06-23T08:00:00Z"
+      },
+      {
         "version": "1.0.30.0",
         "changelog": "Fix detail-page watchlist button missing after SPA navigation. Old guard checked only class presence; stale button from previous item blocked re-injection. Now stores data-item-id on button and removes stale buttons before re-injecting for new item.",
         "targetAbi": "10.11.0.0",
